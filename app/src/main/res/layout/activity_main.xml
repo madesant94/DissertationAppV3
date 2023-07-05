@@ -14,91 +14,91 @@
 
     </com.google.android.material.appbar.AppBarLayout>
 
-        <RelativeLayout
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignTop="@id/autocomplete_fragment"
+        android:orientation="vertical">
+
+        <fragment xmlns:android="http://schemas.android.com/apk/res/android"
+            xmlns:map="http://schemas.android.com/apk/res-auto"
+            android:id="@+id/map"
+            android:name="com.google.android.gms.maps.SupportMapFragment"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical">
-
-            <fragment xmlns:android="http://schemas.android.com/apk/res/android"
-                xmlns:map="http://schemas.android.com/apk/res-auto"
-                android:id="@+id/map"
-                android:name="com.google.android.gms.maps.SupportMapFragment"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                map:cameraTilt="0"
-                tools:context=".MapsActivity" />
-
-            <LinearLayout
-                android:id="@+id/cleanestInfo"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="15dp"
-                android:layout_marginStart="10dp"
-                android:background="@drawable/talking_box"
-                android:orientation="vertical"
-                android:visibility="invisible">
-
-                <TextView
-                    android:id="@+id/cleanestInfoText"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:hint="Cleanest"
-                    android:textColor="@color/white"
-                    />
-
-            </LinearLayout>
-
-            <LinearLayout
-                android:id="@+id/shortestInfo"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="15dp"
-                android:layout_marginLeft="10dp"
-                android:layout_toRightOf="@id/cleanestInfo"
-                android:background="@drawable/talking_box_shortest"
-                android:orientation="vertical"
-                android:visibility="invisible"
-                >
-                <TextView
-                    android:id="@+id/shortestInfoText"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:hint="Shortest"
-                    android:textColor="@color/white"
-                    />
-
-            </LinearLayout>
-
-
-            <LinearLayout
-                android:id="@+id/colorBar"
-                android:layout_width="80dp"
-                android:layout_height="20dp"
-                android:layout_marginTop="15dp"
-                android:layout_marginLeft="10dp"
-                android:layout_toRightOf="@id/shortestInfo"
-                android:background="@drawable/gradient"
-                android:orientation="vertical">
-
-            </LinearLayout>
-
-
-        </RelativeLayout>
+            map:cameraTilt="0"
+            tools:context=".MapsActivity" />
 
         <LinearLayout
-            android:layout_width="match_parent"
+            android:id="@+id/cleanestInfo"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="bottom"
-            android:orientation="horizontal">
+            android:layout_marginStart="5dp"
+            android:layout_marginTop="15dp"
+            android:background="@drawable/talking_box"
+            android:visibility="invisible"
+            android:orientation="vertical"
+            >
+
+            <TextView
+                android:id="@+id/cleanestInfoText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Cleanest"
+                android:textColor="@color/white" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/shortestInfo"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="10dp"
+            android:layout_marginTop="15dp"
+            android:layout_toRightOf="@id/cleanestInfo"
+            android:background="@drawable/talking_box_shortest"
+            android:orientation="vertical"
+            android:visibility="invisible">
+
+            <TextView
+                android:id="@+id/shortestInfoText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Shortest"
+                android:textColor="@color/white" />
+
+        </LinearLayout>
+
+
+        <LinearLayout
+            android:id="@+id/colorBar"
+            android:layout_width="80dp"
+            android:layout_height="20dp"
+            android:layout_marginLeft="10dp"
+            android:layout_marginTop="15dp"
+            android:layout_toRightOf="@id/shortestInfo"
+            android:background="@drawable/gradient"
+            android:orientation="vertical">
+
+        </LinearLayout>
+
+
+    </RelativeLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:orientation="horizontal">
 
         <androidx.cardview.widget.CardView
             android:id="@+id/base_cardview"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            >
+            android:layout_height="wrap_content">
 
 
             <LinearLayout
+                android:id="@+id/MainLayout"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:orientation="vertical">
@@ -120,13 +120,20 @@
                         android:layout_height="wrap_content"
                         android:layout_gravity="center_horizontal"
                         android:gravity="center_horizontal|center_vertical"
-                        android:text="@string/ShowTiles" />
+                        android:text="@string/ShowTiles"
+                        android:textStyle="bold"
+                        android:backgroundTint="@color/very_simple_gray"
+                        android:textColor="@color/muted_blue"
+                        app:iconTint="@color/blue_200" />
 
                     <Button
                         android:id="@+id/btnSubmit"
                         android:layout_width="fill_parent"
                         android:layout_height="wrap_content"
                         android:layout_weight="11"
+                        android:textStyle="bold"
+                        android:backgroundTint="@color/very_simple_gray"
+                        android:textColor="@color/muted_blue"
                         android:gravity="center_horizontal|center_vertical"
                         android:text="@string/submit" />
 
@@ -149,87 +156,228 @@
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:orientation="vertical"
-                    >
+                    android:paddingBottom="5dp">
+                    <!--                    android:visibility="gone"-->
+
 
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
-                        android:paddingLeft="20dp"
                         android:orientation="horizontal">
 
-                        <ImageView
+                        <LinearLayout
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:contentDescription="Pin"
-                            android:src="@drawable/baseline_my_location_24"
-                            android:tint="@color/muted_blue" />
+                            android:layout_weight="1"
+                            android:orientation="vertical">
 
-                        <TextView
-                            android:id="@+id/autoTextViewStart"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:clickable="true"
-                            android:focusable="auto"
-                            android:fontFamily="sans-serif-medium"
-                            android:hint="@string/hintStart"
-                            android:textColor="@color/muted_blue" />
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:gravity="center">
+
+
+                                <ImageButton
+                                    android:id="@+id/buttonWalk"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:background="@drawable/round_corner"
+                                    android:paddingHorizontal="15dp"
+                                    android:paddingVertical="5dp"
+                                    android:src="@drawable/baseline_directions_walk_24" />
+
+                                <ImageButton
+                                    android:id="@+id/buttonCycle"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginStart="30dp"
+                                    android:background="@drawable/round_corner_un"
+                                    android:paddingHorizontal="15dp"
+                                    android:paddingVertical="5dp"
+                                    android:src="@drawable/baseline_directions_bike_24" />
+                            </LinearLayout>
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:orientation="horizontal">
+
+                                <LinearLayout
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:orientation="vertical">
+
+                                    <LinearLayout
+                                        android:layout_width="match_parent"
+                                        android:layout_height="match_parent"
+                                        android:orientation="horizontal"
+                                        android:layout_weight="1"
+                                        android:paddingVertical="10dp"
+                                        android:paddingLeft="15dp">
+
+                                        <ImageView
+                                            android:layout_width="wrap_content"
+                                            android:layout_height="wrap_content"
+                                            android:contentDescription="Pin"
+                                            android:src="@drawable/baseline_pin_drop_24"
+                                            android:tint="@color/muted_blue" />
+
+                                        <TextView
+                                            android:id="@+id/autoTextView"
+                                            android:layout_width="434dp"
+                                            android:layout_height="wrap_content"
+                                            android:hint="@string/hintEnd"
+                                            android:paddingLeft="5dp"
+                                            android:textColorHint="@color/black" />
+                                    </LinearLayout>
+
+                                    <View
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="2dp"
+                                        android:layout_marginLeft="15dp"
+                                        android:background="@color/muted_blue" />
+
+                                    <LinearLayout
+                                        android:layout_weight="1"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="match_parent"
+                                        android:orientation="horizontal"
+                                        android:paddingVertical="10dp"
+                                        android:paddingLeft="15dp">
+
+                                        <ImageView
+                                            android:layout_width="wrap_content"
+                                            android:layout_height="wrap_content"
+                                            android:contentDescription="Pin"
+                                            android:src="@drawable/baseline_my_location_24"
+                                            android:tint="@color/muted_blue" />
+
+                                        <TextView
+                                            android:id="@+id/autoTextViewStart"
+                                            android:layout_width="wrap_content"
+                                            android:layout_height="wrap_content"
+                                            android:clickable="true"
+                                            android:focusable="auto"
+                                            android:hint="@string/hintStart"
+                                            android:paddingLeft="5dp"
+                                            android:textColor="@color/muted_blue"
+                                            android:textColorHint="@color/muted_blue" />
+
+                                    </LinearLayout>
+                                </LinearLayout>
+
+                                <LinearLayout
+                                    android:layout_width="80dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_gravity="center_vertical"
+                                    android:layout_weight="1"
+                                    android:orientation="vertical"
+                                    android:paddingRight="5dp">
+
+                                    <ImageButton
+                                        android:id="@+id/exchangeFields"
+                                        android:layout_width="30dp"
+                                        android:layout_height="30dp"
+                                        android:layout_gravity="center"
+                                        android:layout_weight="1"
+                                        android:background="@drawable/circle"
+                                        android:rotation="90"
+                                        android:src="@drawable/exchange" />
+
+                                </LinearLayout>
+
+                            </LinearLayout>
+
+                            <LinearLayout
+                                android:id="@+id/distanceTargetView"
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:orientation="vertical"
+                                android:paddingLeft="15dp"
+                                android:visibility="visible"
+                                >
+
+                                <LinearLayout
+                                    android:id="@+id/distanceTargetViewH"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="match_parent"
+                                    android:orientation="horizontal"
+                                    android:visibility="visible"
+                                    >
+
+                                <ImageView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:contentDescription="Pin"
+                                    android:src="@drawable/baseline_route_24"
+                                    android:tint="@color/muted_blue" />
+
+                                <TextView
+                                    android:id="@+id/autoDistanceTarget"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:hint="@string/target_distance"
+                                    android:textColorHint="@color/black"
+                                    android:paddingLeft="5dp"
+                                    android:paddingRight="5dp"
+                                    />
+
+                                </LinearLayout>
+
+                                <com.google.android.material.slider.Slider
+                                    android:id="@+id/distanceTargetSlider"
+                                    android:layout_width="250dp"
+                                    android:valueFrom="1"
+                                    android:valueTo="10"
+                                    android:stepSize="0.5"
+                                    android:layout_height="wrap_content"
+                                    android:indeterminate="true"
+                                    android:indeterminateTint="@color/muted_blue"
+                                    android:progressTint= "@color/very_simple_gray"
+                                    android:progressBackgroundTint="@color/muted_blue"
+                                    android:backgroundTintMode="add"
+                                    app:tickColor = "@color/muted_blue"
+                                    app:thumbColor = "@color/muted_blue"
+                                    app:trackColorInactive="@color/very_simple_gray"
+                                    app:trackColorActive="@color/muted_blue"
+                                    android:layout_gravity="center_horizontal"/>
+<!--                                    android:progressBackgroundTint="@color/muted_blue"-->
+<!--                                    android:progressTint= "@color/muted_blue"-->
+<!--                                    android:thumbTint="@color/muted_blue"-->
+<!--                                    android:tickMarkTint="@color/university_red"-->
+<!--                                    -->
+<!--                                    android:tickMarkTintMode="add"-->
+<!--                                    android:secondaryProgress="@color/muted_blue"-->
+
+                            </LinearLayout>
+
+                        </LinearLayout>
 
                     </LinearLayout>
 
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:paddingLeft="20dp"
-                        android:orientation="horizontal">
-
-                        <ImageView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:contentDescription="Pin"
-                            android:src="@drawable/baseline_pin_drop_24"
-                            android:tint="@color/muted_blue"
-                            />
-
-                        <TextView
-                            android:id="@+id/autoTextView"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:hint="@string/hintEnd" />
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:paddingBottom="5dp"
-                        android:gravity="center">
-
-
-                        <ImageButton
-                            android:id="@+id/buttonWalk"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:background="@drawable/round_corner"
-                            android:paddingHorizontal="15dp"
-                            android:paddingVertical="5dp"
-                            android:src="@drawable/baseline_directions_walk_24" />
-
-                        <ImageButton
-                            android:id="@+id/buttonCycle"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="30dp"
-                            android:background="@drawable/round_corner_un"
-                            android:paddingHorizontal="15dp"
-                            android:paddingVertical="5dp"
-                            android:src="@drawable/baseline_directions_bike_24" />
-                    </LinearLayout>
                 </LinearLayout>
+
+                <Switch
+                    android:id="@+id/switch1"
+                    android:textSize="12dp"
+                    android:paddingRight="5dp"
+                    android:layout_gravity="end"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/muted_blue"
+                    android:textStyle="bold"
+                    android:thumbTint="@color/switch_color_selector"
+                    android:textOff="Off"
+                    android:textOn="On"
+                    android:trackTint="@color/quantum_grey"
+                    android:text="Circuit" />
 
             </LinearLayout>
 
         </androidx.cardview.widget.CardView>
 
-        </LinearLayout>
+    </LinearLayout>
 
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

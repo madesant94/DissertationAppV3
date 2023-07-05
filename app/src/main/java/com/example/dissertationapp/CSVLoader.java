@@ -27,7 +27,7 @@ public class CSVLoader {
                     String[] values = line.split(",");
                     //System.out.println("ID: " + values[0] + " , value:" + values[1]);
                     //tiles.add(new tile(Integer.parseInt(values[0]), Float.valueOf(values[1])));
-
+                    //edge(String source, String target, float length, float pollution)
                     edgeList.add(new edge(values[0],
                             values[1],
                             Float.valueOf(values[2]),
@@ -61,10 +61,10 @@ public class CSVLoader {
                     String[] values = line.split(",");
                     //System.out.println("ID: " + values[0] + " , value:" + values[1]);
                     //tiles.add(new tile(Integer.parseInt(values[0]), Float.valueOf(values[1])));
-
+                    //edge(String source, String target, float length, float pollution)
                     Edge = new edge(values[0], values[1], Float.valueOf(values[2]), 0.0F);
-                    Edge.setGrade(Integer.valueOf(values[3]));
-                    Edge.setTurnDegree(values[4]);
+                    //Edge.setGrade(Integer.valueOf(values[3])); #deleted grade for the moment
+                    Edge.setTurnDegree(values[3]); //or 4 depending if grade exists
 
                     edgeList.add(Edge);
 
@@ -96,6 +96,8 @@ public class CSVLoader {
                             Float.valueOf(values[2]),
                             Float.valueOf(values[1]),
                             Integer.parseInt(values[3])));
+                    //node(String ID, float longitude, float latitude, int grid )
+                    //System.out.println("ID: " + values[0] + " , value:" + values[1]);
                     nodesHashMap.put(values[0], new node(values[0],
                             Float.valueOf(values[2]),
                             Float.valueOf(values[1]),

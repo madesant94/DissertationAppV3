@@ -9,15 +9,16 @@
     <string name="lat_long_snippet">Lat: %1$.5f, Long: %2$.5f</string>
     <string name="dropped_pin">Destination</string>
     <string name="poi">poi</string>
-    <string name="hintStart"> Your Location</string>
-    <string name="hintEnd"> </string>
+    <string name="hintStart">From: Your Location</string>
+    <string name="hintEnd">To: </string>
     <string name="submit">Get Route</string>
     <string name="cycling">Cycle</string>
     <string name="walking">Walk</string>
     <string name="ShowTiles">Show Pollution</string>
     <string name="pollutionLevel">Pollution Lvl</string>
-    <string name="api_key">AIzaSyAGlk4aWWkijm7_WQOx3Sn6BP9TH6kTMv0</string>
+    <string name="api_key">AIzaSyDN6Cbtfg7HSnvCu-yr_oh-Dqq4XBojRRc</string>
     <string name="show_pollution">Show Pollution</string>
     <string name="hide_pollution">Hide Pollution</string>
     <string name="startPoint">Start</string>
+    <string name="target_distance">Target Distance (km):</string>
 </resources>

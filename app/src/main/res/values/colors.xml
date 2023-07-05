@@ -15,4 +15,6 @@
     <color name="university_red">#D50032</color>
     <color name="university_blue">#041E42</color>
     <color name="muted_blue">#004F71</color>
+    <color name="very_simple_gray">#E0E0E0</color>
+<!--    <color name="simple_gray">"#E0E0E0"</color>-->
 </resources>
