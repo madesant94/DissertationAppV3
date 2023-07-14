@@ -14,11 +14,11 @@
     <string name="submit">Get Route</string>
     <string name="cycling">Cycle</string>
     <string name="walking">Walk</string>
-    <string name="ShowTiles">Show Pollution</string>
+    <string name="ShowTiles">Show</string>
     <string name="pollutionLevel">Pollution Lvl</string>
     <string name="api_key">AIzaSyDN6Cbtfg7HSnvCu-yr_oh-Dqq4XBojRRc</string>
-    <string name="show_pollution">Show Pollution</string>
-    <string name="hide_pollution">Hide Pollution</string>
+    <string name="show_pollution">Show</string>
+    <string name="hide_pollution">Hide</string>
     <string name="startPoint">Start</string>
     <string name="target_distance">Target Distance (km):</string>
 </resources>

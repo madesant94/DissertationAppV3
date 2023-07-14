@@ -1,6 +1,8 @@
 package com.example.dissertationapp;
 import android.content.Context;
 import android.content.res.AssetManager;
+import android.net.Uri;
+import android.widget.Toast;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -73,6 +75,7 @@ public class CSVLoader {
             }
 
             bufferedReader.close();
+            inputStream.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -106,6 +109,7 @@ public class CSVLoader {
                 n = n+1;
             }
             bufferedReader.close();
+            inputStream.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -135,9 +139,11 @@ public class CSVLoader {
             }
 
             bufferedReader.close();
+            inputStream.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
         return tilesList;
     }
+
 }

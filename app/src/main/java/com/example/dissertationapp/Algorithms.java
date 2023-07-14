@@ -1,6 +1,7 @@
 package com.example.dissertationapp;
 
 import org.jgrapht.Graph;
+import org.jgrapht.Graphs;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -89,17 +90,14 @@ public class Algorithms {
         }
         //return newValue;
     }
-    // Incomplete
-    public static bnn bestNearestNeighbor(Graph<String, edge> graph, node src, node tar, float tarDistance, HashMap<String, node> nodesHashMap) {
+
+    public static bnn bestNearestNeighbor(Graph<String, edge> graph, node src, node tar, float tarDistance, HashMap<String,
+            node> nodesHashMap, List<edge> edgesList, String graphType) {
         String srcString = src.getID();
 
         List<String> route = new ArrayList<>();
-        System.out.println("Target Distance:" + tarDistance);
-        System.out.println("  Src:" + src.getID());
-        System.out.println("  Tar:" + tar.getID());
         double distance = 0;
         double pollution = 0;
-
 
         // f is a constant
         // lets try with f_ryan = 1.32025
@@ -108,6 +106,9 @@ public class Algorithms {
         node curr = src;
         String bestNearestNode = "";
         edge candidate = null;
+        float polWithoutPenalty = 0;
+        double pollutionReturn = 0;
+        double lengthReturn = 0;
 
         //System.out.println("SourceNearestNode: " + src.getID());
 
@@ -115,7 +116,6 @@ public class Algorithms {
         String target = "";
         float penalty = 1;
         float penalty_used = 1;
-        float polWithoutPenalty = 0;
 
         Set<String> visitedVertices = new HashSet<>();
 
@@ -124,17 +124,55 @@ public class Algorithms {
             double smallestWeight = Double.POSITIVE_INFINITY;
 
             // DAME TODOS LOS EDGES DE ESTE NODE (PARA OBTENER SUS NEIGHBORS (TARGETS))
-            for (edge edge : graph.edgesOf(curr.getID())) {
-                source = graph.getEdgeSource(edge);
-                target = graph.getEdgeTarget(edge);
-                penalty = 1;
+            if (graphType.equals("multi")){
+                for (edge edge : graph.edgesOf(curr.getID())) {
+                    source = graph.getEdgeSource(edge);
+                    target = graph.getEdgeTarget(edge);
+                    penalty = 1;
 
-                if (source.equals(curr.getID())) {
-                    //neighbors.add(target);
-                    if (visitedVertices.contains(target)){
-                        penalty = 3;
+                    if (source.equals(curr.getID())) {
+                        //neighbors.add(target);
+                        if (visitedVertices.contains(target)) {
+                            penalty = 2;
+                        }
+                        if ((edge.getPollution() * penalty) < smallestWeight) {
+                            smallestWeight = edge.getPollution() * penalty;
+
+                            polWithoutPenalty = edge.getPollution();
+                            candidate = edge;
+                            bestNearestNode = target;
+                            penalty_used = penalty;
+                            //System.out.println("   src: " + source + ",target: " + bestNearestNode + ", pollution: " + String.valueOf(edge.getPollution()) + ", penalty: " + String.valueOf(penalty) + ", penalized: " + String.valueOf(edge.getPollution()*penalty) +", length:" + String.valueOf(edge.getLength()) );
+                        }
                     }
-                    if ((edge.getPollution() * penalty) < smallestWeight){
+                }
+            }
+            if (graphType.equals("undirected")){
+                for (edge edge : graph.edgesOf(curr.getID())) {
+                    // get edges
+
+                    for (String neighbor : Graphs.neighborListOf(graph, curr.getID())) {
+                        System.out.println("Curr: " + curr.getID() + ", Neighbor: " + neighbor);
+                    }
+
+                    String source_ = graph.getEdgeSource(edge);
+                    String target_ = graph.getEdgeTarget(edge);
+
+                    if (source_.equals(curr.getID())) {
+                        source = graph.getEdgeSource(edge);
+                        target = graph.getEdgeTarget(edge);
+                    }
+                    else{
+                        source = graph.getEdgeTarget(edge);
+                        target = graph.getEdgeSource(edge);
+                    }
+                    penalty = 1;
+
+
+                    if (visitedVertices.contains(target)) {
+                        penalty = 2;
+                    }
+                    if ((edge.getPollution() * penalty) < smallestWeight) {
                         smallestWeight = edge.getPollution() * penalty;
                         polWithoutPenalty = edge.getPollution();
                         candidate = edge;
@@ -142,12 +180,12 @@ public class Algorithms {
                         penalty_used = penalty;
                         //System.out.println("   src: " + source + ",target: " + bestNearestNode + ", pollution: " + String.valueOf(edge.getPollution()) + ", penalty: " + String.valueOf(penalty) + ", penalized: " + String.valueOf(edge.getPollution()*penalty) +", length:" + String.valueOf(edge.getLength()) );
                     }
+
                 }
             }
 
-            System.out.println("src: " + source + ",target: " + bestNearestNode);
-            System.out.println("    pollution: " + String.valueOf(candidate.getPollution()) +", length:" + String.valueOf(candidate.getLength()) );
-            System.out.println("    Current distance traversed:" + distance);
+            System.out.println("src: " + source + ",target: " + bestNearestNode + ", pollution: " + String.valueOf(candidate.getPollution()) +", length:" + String.valueOf(candidate.getLength()) );
+            //System.out.println("Current distance traversed:" + distance);
             //System.out.println("Penalty used this loop: " + String.valueOf(penalty_used));
             visitedVertices.add(curr.getID());
             curr = nodesHashMap.get(bestNearestNode);
@@ -158,17 +196,35 @@ public class Algorithms {
             //System.out.println("Distancia: " + distance + ", Reserva regreso: " + String.valueOf(f * calcDist(curr, tar)));
         }
         // If already reached target then just go for dijkstra
+        List<String> Path = new ArrayList<>();
 
-        Map<String, Double> cleanestPollution = new HashMap<>();
-        Map<String, Double> cleanestLength = new HashMap<>();
-        Map<String, String> previousVertices = new HashMap<>();
+        double PathPollution = 0;
+        double PathLength = 0;
 
-        dijkstra(graph, curr.getID(), cleanestPollution, cleanestLength,
-                previousVertices, "Pollution");
+        if (graphType.equals("multi")) {
+            String startVertex = curr.getID();
+            Map<String, Double> cleanestPollution = new HashMap<>();
+            Map<String, Double> cleanestLength = new HashMap<>();
+            Map<String, String> previousVertices = new HashMap<>();
 
-        List<String> Path = getShortestPath(curr.getID(), tar.getID(), previousVertices);
-        double pollutionReturn = cleanestPollution.get(tar.getID());
-        double lengthReturn = cleanestLength.get(tar.getID());
+            dijkstra(graph, curr.getID(), cleanestPollution, cleanestLength,
+                    previousVertices, "Pollution");
+
+            Path = getShortestPath(curr.getID(), tar.getID(), previousVertices);
+            pollutionReturn = cleanestPollution.get(tar.getID());
+            lengthReturn = cleanestLength.get(tar.getID());
+        }
+        else{
+            DijkstraAlgorithm dijkstra = new DijkstraAlgorithm();
+            for (edge edge : edgesList) {
+                dijkstra.addEdge(edge.getSource(), edge.getTarget(), edge);
+            }
+            dijkstra.execute(curr.getID(), "Pollution");
+
+            Path = dijkstra.getPath(tar.getID());
+            pollutionReturn = dijkstra.getShortestMain(tar.getID());
+            lengthReturn = dijkstra.getShortestSecond(tar.getID());
+        }
 
         System.out.println("------------------------------");
         System.out.println("-----------BNN-------------");
@@ -178,7 +234,8 @@ public class Algorithms {
         System.out.println(Path);
 
         System.out.println("Distance Ida:" + String.valueOf(distance));
-        System.out.println("Distance Regreso:" + String.valueOf(lengthReturn));
+        System.out.println("Distance Regreso:" + String.valueOf(PathLength));
+        //System.out.println("Distance Regreso:" + String.valueOf(PathPollution));
 
         for (String node : Path) {
             route.add(node);
@@ -187,6 +244,7 @@ public class Algorithms {
         bnn BNN = new bnn(route, pollution + pollutionReturn,distance + lengthReturn);
         return BNN;
     }
+
     public static double calcDist(node src, node tar) {
 
         double lat1 = src.getLongitude();
