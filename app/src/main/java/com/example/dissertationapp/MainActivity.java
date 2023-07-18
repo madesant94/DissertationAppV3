@@ -7,7 +7,9 @@ import static android.view.View.VISIBLE;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.res.Resources;
@@ -86,6 +88,8 @@ import com.google.maps.android.heatmaps.WeightedLatLng;
 
 import org.jetbrains.annotations.NotNull;
 import org.jgrapht.Graph;
+import org.jgrapht.GraphPath;
+import org.jgrapht.alg.shortestpath.DijkstraShortestPath;
 import org.jgrapht.graph.DirectedWeightedMultigraph;
 
 import java.io.BufferedReader;
@@ -367,7 +371,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     startMarker.remove();
                 }
 
+                float markerColor = BitmapDescriptorFactory.HUE_BLUE;
                 startMarker = map.addMarker((new MarkerOptions()).position(new LatLng(sourceLat, sourceLong))
+                        .icon(BitmapDescriptorFactory.defaultMarker(markerColor))
                         .title(MainActivity.this.getString(string.startPoint)));
 
                 targetMarker = map.addMarker((new MarkerOptions()).position(new LatLng(targetLat, targetLong))
@@ -526,7 +532,19 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                         targetNearestNode = Utilities.findNearestNode(nodesHashMap_b, targetLat, targetLong);
                         Log.i("Node Src",String.valueOf(sourceNearestNode.getID() ));
                         Log.i("Node Tar",String.valueOf(targetNearestNode.getID()));
+
+                        Utilities.setWeightsEdgesBeta(edgesList_b, nodesHashMap_b, "WD", 0f);
+                        for (edge edge : edgesList_b) {
+                            graph_b.setEdgeWeight(graph_b.getEdge(edge.getSource(), edge.getTarget()), edge.getPollution());
+                        }
+
                         polyline2 = runDijkstra(graph_b, sourceNearestNode, targetNearestNode, nodesHashMap_b, "Length", "Bike", polyline2);
+
+                        Utilities.setWeightsEdgesBeta(edgesList_b, nodesHashMap_b, "WD", 1f);
+                        for (edge edge : edgesList_b) {
+                            graph_b.setEdgeWeight(graph_b.getEdge(edge.getSource(), edge.getTarget()), edge.getPollution());
+                        }
+
                         polyline1 = runDijkstra(graph_b, sourceNearestNode, targetNearestNode, nodesHashMap_b, "Pollution", "Bike", polyline1);
 
                     } else {
@@ -557,7 +575,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                         targetMarker.remove();
                     }
 
+                    float markerColor = BitmapDescriptorFactory.HUE_BLUE;
                     startMarker = map.addMarker((new MarkerOptions()).position(startPoint)
+                            .icon(BitmapDescriptorFactory.defaultMarker(markerColor))
                             .title(MainActivity.this.getString(string.startPoint)));
 
                     targetMarker = map.addMarker((new MarkerOptions()).position(endPoint)
@@ -753,7 +773,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         LatLng london = new LatLng(51.496715, -0.1763672);
         //float zoomLevel = 15.0F;
-        float zoomLevel = 18.0F;
+        float zoomLevel = 17.0F;
         //(-0.1465312673602718 51.51569143211838,
         // -0.2043147326397282 51.51569143211838,
         // -0.2043147326397282 51.479718567881626,
@@ -866,7 +886,12 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private void setMapLongClick(final GoogleMap map) {
         map.setOnMapLongClickListener((GoogleMap.OnMapLongClickListener)(new GoogleMap.OnMapLongClickListener() {
             public void onMapLongClick(@NotNull LatLng latLng) {
-                Intrinsics.checkNotNullParameter(latLng, "latLng");
+                TextView textViewTarget = binding.autoTextView;
+
+                DecimalFormat dfZero = new DecimalFormat("0.0000");
+                double Lat = latLng.latitude;
+                double Long = latLng.longitude;
+                /*Intrinsics.checkNotNullParameter(latLng, "latLng");
 
                 TextView textView = binding.autoTextView;
                 Intrinsics.checkNotNullExpressionValue(textView, "binding.autoTextView");
@@ -891,7 +916,69 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 //.icon(BitmapDescriptorFactory.defaultMarker(hsv[0])));
 
                 targetText = "(" + String.valueOf(dfZero.format(targetLat)) + " , " + String.valueOf(dfZero.format(targetLong)) + ")";
-                textView.setText( "To: " +targetText);
+                textView.setText( "To: " +targetText);*/
+                AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+                builder.setTitle("Set Location as...")
+                        .setItems(new CharSequence[]{"Starting Point", "Destination"}, new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int which) {
+                                // The 'which' argument contains the index position of the selected item
+                                float markerColor;
+                                boolean newLocation = false;
+                                switch(which){
+                                    case 0: //Red was chosen
+                                        newLocation = true;
+                                        markerColor = BitmapDescriptorFactory.HUE_BLUE;
+                                        break;
+                                    case 1: //Blue was chosen
+                                        newLocation = false;
+                                        markerColor = BitmapDescriptorFactory.HUE_RED;
+                                        break;
+                                    default: //Default to red if something goes wrong
+                                        markerColor = BitmapDescriptorFactory.HUE_RED;
+                                        break;
+                                }
+                                // Add a new marker to the map with the chosen color
+                                if (newLocation) {
+                                    if (MainActivity.this.startMarker != null) {
+
+                                        startMarker.remove();
+                                    }
+
+                                    sourceLat = Lat;
+                                    sourceLong = Long;
+
+                                    TextView textViewStart = binding.autoTextViewStart;
+                                    startMarker = map.addMarker(new MarkerOptions()
+                                            .position(latLng)
+                                            .icon(BitmapDescriptorFactory.defaultMarker(markerColor)));
+
+                                    startText = "(" + String.valueOf(dfZero.format(Lat)) + " , " + String.valueOf(dfZero.format(Long)) + ")";
+                                    textViewStart.setText( "From: " +startText);
+                                }
+                                else{
+
+                                    if (MainActivity.this.targetMarker != null) {
+
+                                        targetMarker.remove();
+                                    }
+
+                                    targetLat = Lat;
+                                    targetLong = Long;
+
+                                    targetMarker = map.addMarker(new MarkerOptions()
+                                            .position(latLng)
+                                            .icon(BitmapDescriptorFactory.defaultMarker(markerColor)));
+
+                                    targetText = "(" + String.valueOf(dfZero.format(Lat)) + " , " + String.valueOf(dfZero.format(Long)) + ")";
+                                    textViewTarget.setText( "To: " +targetText);
+
+                                }
+                            }
+                        });
+                builder.show();
+
+
+
             }
         }));
     }
@@ -947,7 +1034,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         if (Route.equals("Bike")){
 
 
-            Map<String, String> previousVertices = new HashMap<>();
+            /*Map<String, String> previousVertices = new HashMap<>();
 
             Algorithms.dijkstra(graph, sourceNearestNode.getID(), cleanestPollution, cleanestLength,
                     previousVertices, Type);
@@ -959,6 +1046,30 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             long t2 = System.currentTimeMillis();
             System.out.println("dijkstraV1 Bike.getPath           " + Path);
             System.out.println("DijsktraV1Bike Running Time (ms): "+ (t2-t1));
+*/
+            // ------- INIT Complete JGRAPHT METHOD -------
+            long t2 = System.currentTimeMillis();
+            DijkstraShortestPath<String, edge> dijkstraShortestPath = new DijkstraShortestPath<>(graph);
+            GraphPath<String, edge> dijkstraPath = dijkstraShortestPath.getPath(sourceNearestNode.getID(), targetNearestNode.getID());
+            // POLLUTION == WEIGHT (WHICH CAN BE DISTANCE)
+            // GRADE == POLLUTION
+            List<edge> edgeList = dijkstraPath.getEdgeList();
+            PathLength = 0;
+            PathPollution = 0;
+            for (edge edge : edgeList) {
+                //PathPollution = PathPollution + (edge.getGrade()/edge.getLength());
+                PathPollution = PathPollution + edge.getGrade();
+                PathLength =  PathLength + edge.getLength();
+            }
+           // PathPollution = PathPollution/edgeList.size();
+
+            Path = dijkstraPath.getVertexList();
+            long t3 = System.currentTimeMillis();
+            System.out.println("dijkstraV Inner Method Bike.getPath           " + Path);
+            System.out.println("DijsktraV1Bike Running Time (ms): "+ (t3-t2));
+
+
+            // ------- END JGRAPHT METHOD -------
 
         }
         else{
@@ -1011,7 +1122,15 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             LinearLayout box = binding.cleanestInfo;
             box.setVisibility(VISIBLE);
             TextView textView = binding.cleanestInfoText;
-            String sourceString = "<b>Cleanest</b><br> " + String.valueOf(dfZero.format(PathPollution/PathLength)) + " pm2.5/m </br><br> " + String.valueOf(dfZero.format(PathLength)) +" meters</b>";
+            // This version divides the pollution against the lenght
+            //String sourceString = "<b>Cleanest</b><br> " + String.valueOf(dfZero.format(PathPollution/PathLength)) + " pm2.5/m </br><br> " + String.valueOf(dfZero.format(PathLength)) +" meters</b>";
+            // This doesnt
+            String sourceString = "<b>Cleanest</b><br> " + String.valueOf(dfZero.format(PathPollution)) + " pm2.5/m </br><br> " + String.valueOf(dfZero.format(PathLength)) +" meters</b>";
+
+            if (Route.equals("Bike")){
+                sourceString = "<b>Shortest</b><br> " + String.valueOf(dfZero.format(PathPollution)) + " pm2.5/m </br><br> " + String.valueOf(dfZero.format(PathLength)) +" meters</b>";
+            }
+
             textView.setText(HtmlCompat.fromHtml(sourceString, HtmlCompat.FROM_HTML_MODE_LEGACY));
             //addInfoWindow(String title, String messagePollution, String messageLength, Polyline polyline1, Marker marker, Boolean shortest)
             //markerCleanest = addInfoWindow("Cleanest",String.valueOf(dfZero.format(PathPollution)),String.valueOf(dfZero.format(PathLength)), polyline, markerCleanest, false);
@@ -1021,7 +1140,12 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             LinearLayout box = binding.shortestInfo;
             box.setVisibility(VISIBLE);
             TextView textView = binding.shortestInfoText;
-            String sourceString = "<b>Shortest</b><br> " + String.valueOf(dfZero.format(PathLength/PathPollution)) + " pm2.5/m </br><br> " + String.valueOf(dfZero.format(PathPollution)) +" meters</b>";
+            //String sourceString = "<b>Shortest</b><br> " + String.valueOf(dfZero.format(PathLength/PathPollution)) + " pm2.5/m </br><br> " + String.valueOf(dfZero.format(PathPollution)) +" meters</b>";
+            String sourceString = "<b>Shortest</b><br> " + String.valueOf(dfZero.format(PathLength)) + " pm2.5/m </br><br> " + String.valueOf(dfZero.format(PathPollution)) +" meters</b>";
+
+            if (Route.equals("Bike")){
+                sourceString = "<b>Shortest</b><br> " + String.valueOf(dfZero.format(PathPollution)) + " pm2.5/m </br><br> " + String.valueOf(dfZero.format(PathLength)) +" meters</b>";
+            }
             textView.setText(HtmlCompat.fromHtml(sourceString, HtmlCompat.FROM_HTML_MODE_LEGACY));
             //addInfoWindowShortest("Cleanest",String.valueOf(dfZero.format(cleanestPathPollution)),String.valueOf(dfZero.format(cleanestPathLength)), polyline);
             //markerShortest = addInfoWindow("Shortest",String.valueOf(dfZero.format(PathLength)),String.valueOf(dfZero.format(PathPollution)), polyline, markerShortest, true);

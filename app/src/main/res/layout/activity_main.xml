@@ -171,14 +171,14 @@
                         android:layout_marginStart="5dp"
                         android:layout_marginEnd="3dp"
                         android:layout_weight="0.50"
-                        android:background="@drawable/squared_white"
+                        android:background="@drawable/squared_gradient"
                         android:drawableStart="@drawable/baseline_directions_24"
                         android:drawablePadding="10dp"
-                        android:drawableTint="@color/muted_blue"
+                        android:drawableTint="@color/white"
                         android:gravity="left|center"
                         android:paddingLeft="10dp"
                         android:text="@string/submit"
-                        android:textColor="@color/muted_blue"
+                        android:textColor="@color/white"
                         android:textSize="14dp"
                         android:textStyle="bold" />
 
@@ -401,20 +401,20 @@
                                 <com.google.android.material.slider.Slider
                                     android:id="@+id/distanceTargetSlider"
                                     android:layout_width="250dp"
-                                    android:valueFrom="1"
-                                    android:valueTo="10"
-                                    android:stepSize="0.5"
                                     android:layout_height="wrap_content"
+                                    android:layout_gravity="center_horizontal"
+                                    android:backgroundTintMode="add"
                                     android:indeterminate="true"
                                     android:indeterminateTint="@color/muted_blue"
-                                    android:progressTint= "@color/very_simple_gray"
                                     android:progressBackgroundTint="@color/muted_blue"
-                                    android:backgroundTintMode="add"
-                                    app:tickColor = "@color/muted_blue"
-                                    app:thumbColor = "@color/muted_blue"
-                                    app:trackColorInactive="@color/very_simple_gray"
+                                    android:progressTint="@color/very_simple_gray"
+                                    android:stepSize="0.5"
+                                    android:valueFrom="1"
+                                    android:valueTo="10"
+                                    app:thumbColor="@color/muted_blue"
+                                    app:tickColor="@color/muted_blue"
                                     app:trackColorActive="@color/muted_blue"
-                                    android:layout_gravity="center_horizontal"/>
+                                    app:trackColorInactive="@color/very_simple_gray" />
 
                             </LinearLayout>
 

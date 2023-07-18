@@ -94,4 +94,78 @@ public class Utilities {
         return EARTH_RADIUS * c;
     }
 
+    public static void setWeightsEdgesBeta(List<edge> edgesList, HashMap<String, node> nodesHashMap, String weightType, float beta) {
+        //public static void setWeightsEdges(List<edge> edgesList, List<node> nodesList, DirectedWeightedMultigraph<String, DefaultWeightedEdge> graph) {
+        float sumPollution = 0;
+        float sumLength = 0;
+
+        for  (edge edge : edgesList) {
+            //sumPollution = sumPollution + edge.getPollution();
+            sumLength = sumLength + edge.getLength();
+
+        }
+
+        for (node node : nodesHashMap.values()){
+            sumPollution = sumPollution + node.getValue();
+        }
+
+        if (weightType.equals("WD") || weightType.equals("WD+Mult")){
+            System.out.println("Beta: " + beta);
+        }
+
+        if (weightType.equals("WD+Mult")){
+            sumPollution = 0;
+            for  (edge edge : edgesList) {
+                String edgeSource = edge.getSource();
+                String edgeTarget = edge.getTarget();
+                float nodeSourceWeight = 0.0F;
+                float nodeTargetWeight = 0.0F;
+                nodeSourceWeight = nodesHashMap.get(edgeSource).getValue();
+                nodeTargetWeight = nodesHashMap.get(edgeTarget).getValue();
+                float edgeWeight = (nodeSourceWeight + nodeTargetWeight) / 2;
+                edgeWeight = edgeWeight*edge.getLength()/10;
+                sumPollution = sumPollution + edgeWeight;
+            }
+
+        }
+
+
+        for  (edge edge : edgesList) {
+
+            String edgeSource = edge.getSource();
+            String edgeTarget = edge.getTarget();
+
+            float nodeSourceWeight = 0.0F;
+            float nodeTargetWeight = 0.0F;
+
+            nodeSourceWeight = nodesHashMap.get(edgeSource).getValue();
+            nodeTargetWeight = nodesHashMap.get(edgeTarget).getValue();
+
+            edge.setGrade((nodeSourceWeight + nodeTargetWeight) / 2);
+            float edgeWeight = (nodeSourceWeight + nodeTargetWeight) / 2;
+
+            if (weightType.equals("Mult")){
+                edgeWeight = edgeWeight*edge.getLength()/10;
+            }
+            if (weightType.equals("WD")){
+
+                edgeWeight = (beta*(1000000* edgeWeight/sumPollution)) + ((1-beta)*(1000000*edge.getLength()/sumLength));
+
+            }
+            if (weightType.equals("WD+Mult")){
+                edgeWeight = edgeWeight*edge.getLength()/10;
+                //System.out.println("pol: " + 1000000*edgeWeight/sumPollution + " length: "+ 1000000*edge.getLength()/sumLength );
+
+                edgeWeight = (beta*(1000000* edgeWeight/sumPollution)) + ((1-beta)*(1000000*edge.getLength()/sumLength));
+
+
+            }
+
+            //System.out.println("pollution" + 1000000*edgeWeight/sumPollution + " length: "+ 1000000*edge.getLength()/sumLength );
+            edge.setPollution(edgeWeight);
+
+        }
+        //return graph;
+    }
+
 }

@@ -7,7 +7,7 @@ public class edge {
     private String target;
     private float length;
     private float pollution;
-    private int grade;
+    private float grade;
     private String turnDegree;
 
     private DefaultWeightedEdge e1 = null;
@@ -57,11 +57,11 @@ public class edge {
         this.pollution = pollution;
     }
 
-    public int getGrade() {
+    public float getGrade() {
         return grade;
     }
 
-    public void setGrade(int grade) {
+    public void setGrade(float grade) {
         this.grade = grade;
     }
 

@@ -17,5 +17,6 @@
     <color name="muted_blue">#004F71</color>
     <color name="very_simple_gray">#E0E0E0</color>
     <color name="gray_500">#9E9E9E</color>
+    <color name="lighter_muted_blue">#0a7bab</color>
 <!--    <color name="simple_gray">"#E0E0E0"</color>-->
 </resources>
