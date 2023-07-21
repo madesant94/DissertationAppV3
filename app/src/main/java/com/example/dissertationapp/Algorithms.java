@@ -1,7 +1,9 @@
 package com.example.dissertationapp;
 
 import org.jgrapht.Graph;
+import org.jgrapht.GraphPath;
 import org.jgrapht.Graphs;
+import org.jgrapht.alg.shortestpath.DijkstraShortestPath;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -93,6 +95,9 @@ public class Algorithms {
 
     public static bnn bestNearestNeighbor(Graph<String, edge> graph, node src, node tar, float tarDistance, HashMap<String,
             node> nodesHashMap, List<edge> edgesList, String graphType) {
+
+        float F_BIKE = 1.45f;
+        float F_WALK = 1.45f;
         String srcString = src.getID();
 
         List<String> route = new ArrayList<>();
@@ -101,7 +106,7 @@ public class Algorithms {
 
         // f is a constant
         // lets try with f_ryan = 1.32025
-        float f = 1.3205f;
+        float f = 0f;
 
         node curr = src;
         String bestNearestNode = "";
@@ -118,6 +123,13 @@ public class Algorithms {
         float penalty_used = 1;
 
         Set<String> visitedVertices = new HashSet<>();
+
+        if (graphType.equals("mult")){
+            f = F_BIKE;
+        }
+        else{
+            f = F_WALK;
+        }
 
         while ((distance + (f * calcDist(curr, tar))) < tarDistance)
         {
@@ -185,8 +197,8 @@ public class Algorithms {
             }
 
             System.out.println("src: " + source + ",target: " + bestNearestNode + ", pollution: " + String.valueOf(candidate.getPollution()) +", length:" + String.valueOf(candidate.getLength()) );
-            //System.out.println("Current distance traversed:" + distance);
-            //System.out.println("Penalty used this loop: " + String.valueOf(penalty_used));
+            System.out.println("Current distance traversed:" + distance);
+            System.out.println("Penalty used this loop: " + String.valueOf(penalty_used));
             visitedVertices.add(curr.getID());
             curr = nodesHashMap.get(bestNearestNode);
             distance = distance + candidate.getLength();
@@ -200,9 +212,35 @@ public class Algorithms {
 
         double PathPollution = 0;
         double PathLength = 0;
-
+        // multi is biking
         if (graphType.equals("multi")) {
-            String startVertex = curr.getID();
+
+            // -----------
+
+            DijkstraShortestPath<String, edge> dijkstraShortestPath = new DijkstraShortestPath<>(graph);
+            GraphPath<String, edge> dijkstraPath = dijkstraShortestPath.getPath(curr.getID(), tar.getID());
+
+            System.out.println("BNN Dijkstra Bike           " + curr.getID());
+            System.out.println("BNN Dijkstra Bike             " + tar.getID());
+            // POLLUTION == WEIGHT (WHICH CAN BE DISTANCE)
+            // GRADE == POLLUTION
+            List<edge> edgeList = dijkstraPath.getEdgeList();
+            PathLength = 0;
+            PathPollution = 0;
+            for (edge edge : edgeList) {
+                //PathPollution = PathPollution + (edge.getGrade()/edge.getLength());
+                pollutionReturn = PathPollution + edge.getGrade();
+                lengthReturn =  PathLength + edge.getLength();
+            }
+            // PathPollution = PathPollution/edgeList.size();
+
+            Path = dijkstraPath.getVertexList();
+
+
+            // --------------
+
+            // Previous method
+            /*String startVertex = curr.getID();
             Map<String, Double> cleanestPollution = new HashMap<>();
             Map<String, Double> cleanestLength = new HashMap<>();
             Map<String, String> previousVertices = new HashMap<>();
@@ -212,9 +250,9 @@ public class Algorithms {
 
             Path = getShortestPath(curr.getID(), tar.getID(), previousVertices);
             pollutionReturn = cleanestPollution.get(tar.getID());
-            lengthReturn = cleanestLength.get(tar.getID());
+            lengthReturn = cleanestLength.get(tar.getID());*/
         }
-        else{
+        else{ // walking graph
             DijkstraAlgorithm dijkstra = new DijkstraAlgorithm();
             for (edge edge : edgesList) {
                 dijkstra.addEdge(edge.getSource(), edge.getTarget(), edge);

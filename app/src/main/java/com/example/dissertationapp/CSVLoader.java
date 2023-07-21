@@ -47,7 +47,7 @@ public class CSVLoader {
         }
         return edgeList;
     }
-    public static List<edge> loadEdgesBike(Context context, String fileName) {
+    public static List<edge> loadEdgesBike(Context context, String fileName, boolean simple) {
         List<edge> edgeList = new ArrayList<>();
         AssetManager assetManager = context.getAssets();
         try {
@@ -66,7 +66,13 @@ public class CSVLoader {
                     //edge(String source, String target, float length, float pollution)
                     Edge = new edge(values[0], values[1], Float.valueOf(values[2]), 0.0F);
                     //Edge.setGrade(Integer.valueOf(values[3])); #deleted grade for the moment
-                    Edge.setTurnDegree(values[3]); //or 4 depending if grade exists
+
+                    if (simple){
+                        Edge.setTurnDegree("0");
+                    }
+                    else{
+                        Edge.setTurnDegree(values[3]);
+                    }; //or 4 depending if grade exists
 
                     edgeList.add(Edge);
 

@@ -37,20 +37,34 @@
             android:layout_marginStart="5dp"
             android:layout_marginTop="15dp"
             android:background="@drawable/talking_box"
-            android:visibility="invisible"
             android:orientation="vertical"
-            >
+            android:visibility="visible">
 
             <TextView
                 android:id="@+id/cleanestInfoText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:hint="Cleanest"
-                android:textColor="@color/white" />
+                android:textColor="@color/muted_blue" />
+
+            <TextView
+                android:id="@+id/shortestInfoText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Shortest"
+                android:textColor="@color/gray_500" />
+
+            <TextView
+                android:id="@+id/tradeOffText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Trade-Off"
+                android:textColor="@color/lighter_muted_blue"
+                android:visibility="gone" />
 
         </LinearLayout>
 
-        <LinearLayout
+        <!--<LinearLayout
             android:id="@+id/shortestInfo"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -59,7 +73,7 @@
             android:layout_toRightOf="@id/cleanestInfo"
             android:background="@drawable/talking_box_shortest"
             android:orientation="vertical"
-            android:visibility="invisible">
+            android:visibility="visible">
 
             <TextView
                 android:id="@+id/shortestInfoText"
@@ -68,7 +82,7 @@
                 android:hint="Shortest"
                 android:textColor="@color/white" />
 
-        </LinearLayout>
+        </LinearLayout>-->
 
 
         <LinearLayout
@@ -77,7 +91,7 @@
             android:layout_height="20dp"
             android:layout_marginLeft="10dp"
             android:layout_marginTop="15dp"
-            android:layout_toRightOf="@id/shortestInfo"
+            android:layout_toRightOf="@id/cleanestInfo"
             android:background="@drawable/gradient"
             android:orientation="vertical">
 
@@ -122,46 +136,46 @@
                 <View
                     android:id="@+id/viewFirst"
                     android:layout_width="wrap_content"
-                    android:layout_marginTop="2dp"
                     android:layout_height="2dp"
                     android:layout_marginHorizontal="50dp"
+                    android:layout_marginTop="2dp"
                     android:background="@color/very_simple_gray" />
-
-                <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:orientation="horizontal"
-                android:gravity="center"
-                android:weightSum="1">
-
-                <TextView
-                    android:id="@+id/RouteText"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-
-                    android:layout_weight=".5"
-                    android:text="" />
-
-                <TextView
-                    android:id="@+id/PullutionText"
-                    android:layout_width="0dp"
-                    android:textStyle="bold"
-                    android:layout_height="wrap_content"
-                    android:layout_weight=".5"
-                    android:textColor="@color/muted_blue"
-                    android:gravity="center"
-                    android:layout_marginStart="3dp"
-                    android:layout_marginEnd="6dp"
-
-                    android:text="Pollution" />
-
-            </LinearLayout>
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:orientation="horizontal"
                     android:gravity="center"
+                    android:orientation="horizontal"
+                    android:weightSum="1">
+
+                    <TextView
+                        android:id="@+id/RouteText"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+
+                        android:layout_weight=".5"
+                        android:text="" />
+
+                    <TextView
+                        android:id="@+id/PullutionText"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="3dp"
+                        android:layout_marginEnd="6dp"
+                        android:layout_weight=".5"
+                        android:gravity="center"
+                        android:text="Pollution"
+                        android:textColor="@color/muted_blue"
+
+                        android:textStyle="bold" />
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:orientation="horizontal"
                     android:weightSum="1">
 
                     <android.widget.Button
@@ -186,29 +200,28 @@
                         android:id="@+id/btnGetPollution"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
+                        android:layout_marginStart="3dp"
+                        android:layout_weight=".25"
+                        android:background="@drawable/squared_white"
                         android:gravity="center"
                         android:text="Update"
-                        android:layout_weight = ".25"
-                        android:layout_marginStart="3dp"
-                        android:textStyle="bold"
-                        android:textSize="14dp"
-                        android:background="@drawable/squared_white"
                         android:textColor="@color/muted_blue"
-                        />
+                        android:textSize="14dp"
+                        android:textStyle="bold" />
 
                     <android.widget.Button
                         android:id="@+id/btnShowPollution"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:gravity="center"
-                        android:text="@string/ShowTiles"
-                        android:layout_weight = "0.25"
                         android:layout_marginStart="-1dp"
                         android:layout_marginEnd="3dp"
-                        android:textStyle="bold"
-                        android:textSize="14dp"
+                        android:layout_weight="0.25"
                         android:background="@drawable/squared_white"
-                        android:textColor="@color/muted_blue"></android.widget.Button>
+                        android:gravity="center"
+                        android:text="@string/ShowTiles"
+                        android:textColor="@color/muted_blue"
+                        android:textSize="14dp"
+                        android:textStyle="bold"></android.widget.Button>
 
                 </LinearLayout>
 
@@ -273,8 +286,8 @@
                             <LinearLayout
                                 android:layout_width="match_parent"
                                 android:layout_height="match_parent"
-                                android:paddingTop="5dp"
-                                android:orientation="horizontal">
+                                android:orientation="horizontal"
+                                android:paddingTop="5dp">
 
                                 <LinearLayout
                                     android:layout_width="match_parent"
@@ -298,21 +311,24 @@
                                             android:tint="@color/muted_blue" />
 
                                         <TextView
+
                                             android:id="@+id/autoTextViewStart"
-                                            android:layout_width="434dp"
-                                            android:layout_height="wrap_content"
+                                            android:layout_width="120pt"
+                                            android:layout_height="match_parent"
+                                            android:background="@drawable/squared_white"
                                             android:clickable="true"
                                             android:cursorVisible="true"
                                             android:defaultFocusHighlightEnabled="false"
                                             android:focusable="auto"
                                             android:hint="@string/hintStart"
-                                            android:paddingLeft="5dp"
+                                            android:layout_marginLeft="5dp"
+                                            android:paddingLeft="10dp"
                                             android:textColorHint="@color/muted_blue" />
 
                                     </LinearLayout>
 
                                     <LinearLayout
-                                        android:layout_width="match_parent"
+                                        android:layout_width="wrap_content"
                                         android:layout_height="match_parent"
                                         android:layout_weight="1"
                                         android:orientation="horizontal"
@@ -327,13 +343,19 @@
                                             android:tint="@color/university_red" />
 
                                         <TextView
+                                            android:background="@drawable/squared_white"
                                             android:id="@+id/autoTextView"
-                                            android:layout_width="434dp"
-                                            android:layout_height="wrap_content"
+                                            android:layout_width="120pt"
+                                            android:layout_height="match_parent"
+                                            android:clickable="true"
+                                            android:cursorVisible="true"
+                                            android:defaultFocusHighlightEnabled="false"
+                                            android:focusable="auto"
                                             android:hint="@string/hintEnd"
-                                            android:textColorHint="@color/quantum_grey800"
+                                            android:layout_marginLeft="5dp"
+                                            android:paddingLeft="10dp"
                                             android:textColor="@color/quantum_grey800"
-                                            android:paddingLeft="5dp"/>
+                                            android:textColorHint="@color/quantum_grey800" />
                                     </LinearLayout>
 
                                 </LinearLayout>
@@ -365,36 +387,33 @@
                                 android:layout_width="match_parent"
                                 android:layout_height="match_parent"
                                 android:orientation="vertical"
-                                android:paddingTop="5dp"
                                 android:paddingLeft="15dp"
-                                android:visibility="visible"
-                                >
+                                android:paddingTop="5dp"
+                                android:visibility="visible">
 
                                 <LinearLayout
                                     android:id="@+id/distanceTargetViewH"
                                     android:layout_width="match_parent"
                                     android:layout_height="match_parent"
                                     android:orientation="horizontal"
-                                    android:visibility="visible"
-                                    >
+                                    android:visibility="visible">
 
-                                <ImageView
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:contentDescription="Pin"
-                                    android:src="@drawable/baseline_route_24"
-                                    android:tint="@color/muted_blue" />
+                                    <ImageView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:contentDescription="Pin"
+                                        android:src="@drawable/baseline_route_24"
+                                        android:tint="@color/muted_blue" />
 
-                                <TextView
-                                    android:id="@+id/autoDistanceTarget"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:hint="@string/target_distance"
+                                    <TextView
+                                        android:id="@+id/autoDistanceTarget"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:hint="@string/target_distance"
 
-                                    android:paddingLeft="5dp"
-                                    android:paddingRight="5dp"
-                                    android:textColorHint="@color/quantum_grey800"
-                                    />
+                                        android:paddingLeft="5dp"
+                                        android:paddingRight="5dp"
+                                        android:textColorHint="@color/quantum_grey800" />
 
                                 </LinearLayout>
 
@@ -410,7 +429,7 @@
                                     android:progressTint="@color/very_simple_gray"
                                     android:stepSize="0.5"
                                     android:valueFrom="1"
-                                    android:valueTo="10"
+                                    android:valueTo="5"
                                     app:thumbColor="@color/muted_blue"
                                     app:tickColor="@color/muted_blue"
                                     app:trackColorActive="@color/muted_blue"
@@ -426,18 +445,18 @@
 
                 <Switch
                     android:id="@+id/switch1"
-                    android:textSize="14dp"
-                    android:paddingRight="5dp"
-                    android:layout_gravity="end"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:layout_gravity="end"
+                    android:paddingRight="5dp"
+                    android:text="Circuit"
                     android:textColor="@color/muted_blue"
-                    android:textStyle="bold"
-                    android:thumbTint="@color/switch_color_selector"
                     android:textOff="Off"
                     android:textOn="On"
-                    android:trackTint="@color/quantum_grey"
-                    android:text="Circuit" />
+                    android:textSize="14dp"
+                    android:textStyle="bold"
+                    android:thumbTint="@color/switch_color_selector"
+                    android:trackTint="@color/quantum_grey" />
 
             </LinearLayout>
 
