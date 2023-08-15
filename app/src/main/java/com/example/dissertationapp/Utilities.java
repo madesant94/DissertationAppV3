@@ -141,8 +141,14 @@ public class Utilities {
             nodeSourceWeight = nodesHashMap.get(edgeSource).getValue();
             nodeTargetWeight = nodesHashMap.get(edgeTarget).getValue();
 
+            //original
+
             edge.setGrade((nodeSourceWeight + nodeTargetWeight) / 2);
             float edgeWeight = (nodeSourceWeight + nodeTargetWeight) / 2;
+            //float FACTOR = 40;
+            //edge.setGrade(((nodeSourceWeight + nodeTargetWeight) / 2)*(edge.getLength()/FACTOR));
+            //float edgeWeight = ((nodeSourceWeight + nodeTargetWeight) / 2)*(edge.getLength()/FACTOR);
+
 
             if (weightType.equals("Mult")){
                 edgeWeight = edgeWeight*edge.getLength()/10;

@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- res/layout/custom_marker_layout.xml -->
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="40dp"
+    android:layout_height="90dp"
+    >
+
+    <TextView
+        android:id="@+id/PMLevels"
+        android:layout_width="wrap_content"
+        android:layout_height="10dp"
+        android:text="PM2.5 \u03BCg / m\u00B3"
+        android:textColor="@color/muted_blue"
+        android:textStyle="bold"
+        android:background="@color/gray_500"
+        android:textSize ="6dp"/>
+
+    <View
+        android:id="@+id/innerRectangle1"
+        android:layout_width="match_parent"
+        android:layout_height="8dp"
+        android:background="#006837"
+        android:layout_below="@id/PMLevels"/>
+
+    <View
+        android:id="@+id/innerRectangle2"
+        android:layout_width="match_parent"
+        android:layout_height="8dp"
+        android:layout_below="@id/innerRectangle1"
+        android:background="#219b51"/>
+
+    <View
+        android:id="@+id/innerRectangle3"
+        android:layout_width="match_parent"
+        android:layout_height="8dp"
+        android:layout_below="@id/innerRectangle2"
+        android:background="#72c264"/>
+
+    <View
+        android:id="@+id/innerRectangle4"
+        android:layout_width="match_parent"
+        android:layout_height="8dp"
+        android:layout_below="@id/innerRectangle3"
+        android:background="#b7e075"/>
+
+    <View
+        android:id="@+id/innerRectangle5"
+        android:layout_width="match_parent"
+        android:layout_height="8dp"
+        android:layout_below="@id/innerRectangle4"
+        android:background="#e9f5a1"/>
+
+    <View
+        android:id="@+id/innerRectangle6"
+        android:layout_width="match_parent"
+        android:layout_height="8dp"
+        android:layout_below="@id/innerRectangle5"
+        android:background="#feeda1"/>
+
+    <View
+        android:id="@+id/innerRectangle7"
+        android:layout_width="match_parent"
+        android:layout_height="8dp"
+        android:layout_below="@id/innerRectangle6"
+        android:background="#fdbea1"/>
+
+    <View
+        android:id="@+id/innerRectangle8"
+        android:layout_width="match_parent"
+        android:layout_height="8dp"
+        android:layout_below="@id/innerRectangle7"
+        android:background="#f57948"/>
+
+    <View
+        android:id="@+id/innerRectangle9"
+        android:layout_width="match_parent"
+        android:layout_height="8dp"
+        android:layout_below="@id/innerRectangle8"
+        android:background="#d93529"/>
+
+    <View
+        android:id="@+id/innerRectangle10"
+        android:layout_width="match_parent"
+        android:layout_height="8dp"
+        android:layout_below="@id/innerRectangle9"
+        android:background="#a50026"/>
+
+    <TextView
+        android:id="@+id/maxValue"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="10"
+        android:textColor="@color/white"
+        android:textSize ="6dp"
+        android:textStyle="bold"
+        android:layout_alignBottom="@id/innerRectangle10"/>
+
+    <TextView
+        android:id="@+id/minValue"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="0"
+        android:textColor="@color/white"
+        android:textSize ="6dp"
+        android:textStyle="bold"
+        android:layout_alignBottom="@id/innerRectangle1"/>
+
+    <!-- Add more rectangles as needed -->
+
+</RelativeLayout>
