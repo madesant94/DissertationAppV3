@@ -152,4 +152,33 @@ public class CSVLoader {
         return tilesList;
     }
 
+    public static HashMap loadTilesHashmap(Context context, String fileName) {
+        HashMap tilesList = new HashMap<>();
+        AssetManager assetManager = context.getAssets();
+        try {
+            InputStream inputStream = assetManager.open(fileName);
+            InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
+            BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
+            int n = 0;
+            String line = "";
+            while ((line = bufferedReader.readLine()) != null) {
+                // Process each line of the CSV file
+                if (n != 0) {
+                    String[] values = line.split(",");
+                    // tile(int ID, float value, String geometry)
+                    tilesList.put(Integer.parseInt(values[0]),new tile(Integer.parseInt(values[0]),
+                            Float.valueOf(values[1]),
+                            values[2]));
+                }
+                n = n+1;
+            }
+
+            bufferedReader.close();
+            inputStream.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return tilesList;
+    }
+
 }

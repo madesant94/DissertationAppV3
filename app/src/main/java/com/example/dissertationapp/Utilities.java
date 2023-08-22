@@ -30,6 +30,8 @@ public class Utilities {
 
     //public static void setWeightsNodes(List<node> nodesList, List<tile> tilesList) {
     public static void setWeightsNodes(HashMap<String, node> nodesHashMap, List<tile> tilesList) {
+    //
+    //public static void setWeightsNodes(HashMap<String, node> nodesHashMap, HashMap<String, tile> tilesList) {
         // Find Node in graph
 
         for  (tile tile : tilesList) {
@@ -43,6 +45,18 @@ public class Utilities {
                 }
             }
         }
+
+        /*for  (String stringTile : tilesList.keySet()) {
+            tile tile = tilesList.get(stringTile);
+            int tileID = tile.getID();
+            Float tileValue = tile.getValue();
+
+            for (node eNode : nodesHashMap.values()){
+                if (eNode.getGrid() == tileID){
+                    eNode.setValue(tileValue);
+                }
+            }
+        }*/
     }
 
     //public static node findNearestNode(List<node> nodesCList, double pointX, double pointY) {

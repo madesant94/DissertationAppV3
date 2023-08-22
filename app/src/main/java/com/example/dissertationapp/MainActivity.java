@@ -12,6 +12,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.content.res.AssetManager;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
@@ -51,6 +52,12 @@ import androidx.core.content.ContextCompat;
 import androidx.core.graphics.ColorUtils;
 import androidx.core.text.HtmlCompat;
 
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.Volley;
 import com.example.dissertationapp.R.color;
 import com.example.dissertationapp.R.drawable;
 import com.example.dissertationapp.R.id;
@@ -112,38 +119,28 @@ import java.util.Map;
 import kotlin.collections.CollectionsKt;
 import kotlin.jvm.internal.Intrinsics;
 
-
-
 public class MainActivity extends AppCompatActivity implements OnMapReadyCallback {
 
-    private GoogleMap map;
-    Circle circleInit;
-    Circle circleEnd;
+    // initialize all variables
+    private GoogleMap map; // Google Maps
     private Marker targetMarker;
     private Marker startMarker;
-
     private float targetDistanceValue;
-    private Marker markerShortest;
-    private Marker markerCleanest;
     private Boolean pollutionState = false;
-
-    float ZOOM = 13;
-
+    float ZOOM = 16;
     Map<String, List<Polygon>> polygonListsMap = new HashMap<>();
-
-    private Boolean poly1Show = false;
+    private Boolean poly1Show = false; // Flags to show or not polylines
     private Boolean poly2Show = false;
-
     private Boolean switchFlag = false;
-
-    private Polyline polyline1;
+    private Polyline polyline1; // polylines
     private Polyline polyline2;
     private Polyline polyline3;
     private ActivityMainBinding binding;
 
-    private TileOverlay overlay;
     List<tile> tilesList = new ArrayList<>();
+    HashMap<String, tile> tilesHashmap;
     boolean routeType = false;
+    boolean toggleFlagSubmit = true; // true if there is no route showing
 
     HashMap<String, node> nodesHashMap;
     HashMap<String, node> nodesHashMap_p;
@@ -167,9 +164,12 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     String startText = "Your Location";
     String targetText = "";
 
-    //DirectedWeightedMultigraph<String, edge> graph = new DirectedWeightedMultigraph<>(edge.class);
+    private RequestQueue mRequestQueue; // For Volley Request
+    private StringRequest mStringRequest; // For Volley Request
+
+    private String url = "https://cleanestpath-gcr.nw.r.appspot.com/data"; // contact server
+
     SimpleWeightedGraph<String, edge> graph = new SimpleWeightedGraph<>(edge.class);
-    //Just changed to simple weighted graph
     SimpleWeightedGraph<String, edge> graph_p = new SimpleWeightedGraph<>(edge.class);
     DirectedWeightedMultigraph<String, edge> graph_b = new DirectedWeightedMultigraph<>(edge.class);
     DirectedWeightedMultigraph<String, edge> graph_b_p = new DirectedWeightedMultigraph<>(edge.class);
@@ -190,7 +190,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         //nodesList = CSVLoader.loadNodes(this, "nodes-in-grid.csv");
         nodesHashMap = CSVLoader.loadNodes(this, "nodes-in-grid.csv");
         edgesList = CSVLoader.loadEdges(this, "square-grid-edges.csv");
-        tilesList = CSVLoader.loadTiles(this, "g_2023_07_20_07_00_00.csv");
+        tilesList = CSVLoader.loadTiles(this, "g60_2023_07_20_08_00_00.csv");
+        tilesHashmap = CSVLoader.loadTilesHashmap(this, "g60_2023_07_20_08_00_00.csv");
+
         //tilesList = CSVLoader.loadTiles(this, "grid-geom-manual-horizontal.csv");
         //tilesList = CSVLoader.loadTiles(this, "grid-geom-manual-square.csv");
         // CREATE GRAPH WALKING
@@ -204,8 +206,11 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         int edgeCount = graph.edgeSet().size();
 
+
+
         Log.i("Graph", "The graph has " + edgeCount + " edges.");
 
+        //Utilities.setWeightsNodes(nodesHashMap, tilesList);
         Utilities.setWeightsNodes(nodesHashMap, tilesList);
         Utilities.setWeightsEdges(edgesList, nodesHashMap, "Pollution");
 
@@ -481,7 +486,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     System.out.println("Creating Polygons (ms): "+ (t2-t1));
 
 
-                    pmLayout.setVisibility(View.GONE);
+                    pmLayout.setVisibility(VISIBLE);
 
 
                 } else{
@@ -519,198 +524,282 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         submitButton.setOnClickListener((View.OnClickListener) (new View.OnClickListener() {
             public void onClick(View it) {
 
+                if (toggleFlagSubmit) {
 
-                //LocationManager locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-                Location sourceLocation = retrieveLocation();
-                Log.i("startText", startText);
-                Log.i("targetText", targetText);
+                    //LocationManager locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+                    Location sourceLocation = retrieveLocation();
+                    Log.i("startText", startText);
+                    Log.i("targetText", targetText);
 
-                boolean runFlag = true;
+                    boolean runFlag = true;
 
-                if (startText.equals("Your Location") || targetText.equals("To: Your Location")) {
+                    if (startText.equals("Your Location") || targetText.equals("To: Your Location")) {
 
-                    if (locationRequestFlag) {
-                        sourceLat = sourceLocation.getLatitude();
-                        sourceLong = sourceLocation.getLongitude();
+                        if (locationRequestFlag) {
+                            sourceLat = sourceLocation.getLatitude();
+                            sourceLong = sourceLocation.getLongitude();
 
-                        Log.i("Enable My Location Test src", String.valueOf(sourceLat));
-                        Log.i("Enable My Location Test tar", String.valueOf(sourceLong));
-                    } else {
+                            Log.i("Enable My Location Test src", String.valueOf(sourceLat));
+                            Log.i("Enable My Location Test tar", String.valueOf(sourceLong));
+                        } else {
 
+                            Snackbar snackbar = Snackbar
+                                    .make(findViewById(id.base_cardview),
+                                            "Error! You did not grant location permission. Please specify start and destination points Or change permissions in phone -> Settings.",
+                                            Snackbar.LENGTH_LONG);
+
+                            View view = snackbar.getView();
+                            TextView tv = (TextView) view.findViewById(R.id.snackbar_text);
+
+                            LinearLayout.LayoutParams params = (LinearLayout.LayoutParams) tv.getLayoutParams();
+                            params.height = 200;
+                            tv.setTextColor(Color.WHITE);
+                            tv.setText("Error! You did not grant location permission.\n Please specify start and destination points.");
+                            tv.setGravity(Gravity.CENTER_HORIZONTAL);
+                            tv.setLayoutParams(params);
+
+
+                            snackbar.show();
+                            //Toast.makeText(MainActivity.this, "Error! You did not grant location permission. Please specify start and destination points or change permissions in phone -> Settings.", Toast.LENGTH_LONG).show();
+                            runFlag = false;
+                        }
+                    }
+
+                    if (sourceLat == 0) {
+                        runFlag = false;
                         Snackbar snackbar = Snackbar
                                 .make(findViewById(id.base_cardview),
-                                        "Error! You did not grant location permission. Please specify start and destination points Or change permissions in phone -> Settings.",
+                                        "Error! Please specify Starting point.",
                                         Snackbar.LENGTH_LONG);
-
-                        View view = snackbar.getView();
-                        TextView tv = (TextView) view.findViewById(R.id.snackbar_text);
-
-                        LinearLayout.LayoutParams params = (LinearLayout.LayoutParams)tv.getLayoutParams();
-                        params.height = 200;
-                        tv.setTextColor(Color.WHITE);
-                        tv.setText("Error! You did not grant location permission.\n Please specify start and destination points.");
-                        tv.setGravity(Gravity.CENTER_HORIZONTAL);
-                        tv.setLayoutParams(params);
-
-
                         snackbar.show();
-                        //Toast.makeText(MainActivity.this, "Error! You did not grant location permission. Please specify start and destination points or change permissions in phone -> Settings.", Toast.LENGTH_LONG).show();
+                    }
+
+                    if (targetLat == 0) {
                         runFlag = false;
-                    }
-                }
-
-                if (sourceLat == 0){
-                    runFlag = false;
-                    Snackbar snackbar = Snackbar
-                            .make(findViewById(id.base_cardview),
-                                    "Error! Please specify Starting point.",
-                                    Snackbar.LENGTH_LONG);
-                    snackbar.show();
-                }
-
-                if (targetLat == 0){
-                    runFlag = false;
-                    Snackbar snackbar = Snackbar
-                            .make(findViewById(id.base_cardview),
-                                    "Error! Please specify Destination point.",
-                                    Snackbar.LENGTH_LONG);
-                    snackbar.show();
-                }
-
-                if (runFlag) {
-
-                    node sourceNearestNode = null;
-                    node targetNearestNode = null;
-
-                    if (switchFlag) {
-
-                        float targetDistance = 5000;
-
-                        if (polyline2 != null) {
-                            polyline2.remove();
-                        }
-
-                        if (routeType) { // Bike Network
-
-                            sourceNearestNode = Utilities.findNearestNode(nodesHashMap_b_p, sourceLat, sourceLong);
-                            targetNearestNode = Utilities.findNearestNode(nodesHashMap_b_p, targetLat, targetLong);
-
-                            polyline1 = runBestNearestNeighbor(graph_b_p, sourceNearestNode, targetNearestNode,
-                                    nodesHashMap_b_p, "Bike", targetDistanceValue * 1000,
-                                    polyline1, edgesList_b_p);
-                        } else { // Walk Network
-
-                            sourceNearestNode = Utilities.findNearestNode(nodesHashMap_p, sourceLat, sourceLong);
-                            targetNearestNode = Utilities.findNearestNode(nodesHashMap_p, targetLat, targetLong);
-
-                            polyline1 = runBestNearestNeighbor(graph_p, sourceNearestNode, targetNearestNode, nodesHashMap_p, "Walk", targetDistanceValue * 1000, polyline1, edgesList_p);
-                        }
-                    } else {
-                        if (routeType) { //Bike
-                            // Graph
-                            Log.i("Route Type", "will Run Dijkstra for Bike");
-
-                            sourceNearestNode = Utilities.findNearestNode(nodesHashMap_b, sourceLat, sourceLong);
-                            targetNearestNode = Utilities.findNearestNode(nodesHashMap_b, targetLat, targetLong);
-
-
-                            Log.i("Node Src", String.valueOf(sourceNearestNode.getID()));
-                            Log.i("Node Tar", String.valueOf(targetNearestNode.getID()));
-
-                            Utilities.setWeightsEdgesBeta(edgesList_b, nodesHashMap_b, "WD", 0f);
-                            for (edge edge : edgesList_b) {
-                                graph_b.setEdgeWeight(graph_b.getEdge(edge.getSource(), edge.getTarget()), edge.getPollution());
-                            }
-
-                            polyline2 = runDijkstra(graph_b, sourceNearestNode, targetNearestNode, nodesHashMap_b, "Length", "Bike", polyline2);
-
-                            Utilities.setWeightsEdgesBeta(edgesList_b, nodesHashMap_b, "WD", 1f);
-                            for (edge edge : edgesList_b) {
-                                graph_b.setEdgeWeight(graph_b.getEdge(edge.getSource(), edge.getTarget()), edge.getPollution());
-                            }
-
-                            polyline1 = runDijkstra(graph_b, sourceNearestNode, targetNearestNode, nodesHashMap_b, "Pollution", "Bike", polyline1);
-
-                            Utilities.setWeightsEdgesBeta(edgesList_b, nodesHashMap_b, "WD", 0.5f);
-                            for (edge edge : edgesList_b) {
-                                graph_b.setEdgeWeight(graph_b.getEdge(edge.getSource(), edge.getTarget()), edge.getPollution());
-                            }
-
-                            if (polyline3 != null) {
-                                polyline3.remove();
-                            }
-
-                            if (findCompromiseRoute()) {
-
-                                polyline3 = runDijkstra(graph_b, sourceNearestNode, targetNearestNode, nodesHashMap_b, "Compromise", "Bike", polyline3);
-                            }
-
-
-                        } else { //Walk
-                            Log.i("Route Type", "will Run Dijkstra for Walk");
-
-                            sourceNearestNode = Utilities.findNearestNode(nodesHashMap, sourceLat, sourceLong);
-                            targetNearestNode = Utilities.findNearestNode(nodesHashMap, targetLat, targetLong);
-
-
-                            Log.i("Node Src", String.valueOf(sourceNearestNode.getID()));
-                            Log.i("Node Tar", String.valueOf(targetNearestNode.getID()));
-
-                            Utilities.setWeightsEdgesBeta(edgesList, nodesHashMap, "WD", 0f);
-                            for (edge edge : edgesList) {
-                                graph.setEdgeWeight(graph.getEdge(edge.getSource(), edge.getTarget()), edge.getPollution());
-                            }
-
-                            polyline2 = runDijkstra(graph, sourceNearestNode, targetNearestNode, nodesHashMap, "Length", "Walk", polyline2);
-
-                            Utilities.setWeightsEdgesBeta(edgesList, nodesHashMap, "WD", 1f);
-                            for (edge edge : edgesList) {
-                                graph.setEdgeWeight(graph.getEdge(edge.getSource(), edge.getTarget()), edge.getPollution());
-                            }
-
-                            polyline1 = runDijkstra(graph, sourceNearestNode, targetNearestNode, nodesHashMap, "Pollution", "Walk", polyline1);
-
-                            Utilities.setWeightsEdgesBeta(edgesList, nodesHashMap, "WD", 0.5f);
-                            for (edge edge : edgesList) {
-                                graph.setEdgeWeight(graph.getEdge(edge.getSource(), edge.getTarget()), edge.getPollution());
-                            }
-
-                            if (polyline3 != null) {
-                                polyline3.remove();
-                            }
-
-                            if (findCompromiseRoute()) {
-
-                                polyline3 = runDijkstra(graph, sourceNearestNode, targetNearestNode, nodesHashMap, "Compromise", "Walk", polyline3);
-
-                            }
-                            //polyline2 = runDijkstra(graph, sourceNearestNode, targetNearestNode, nodesHashMap, "Length", "Walk", polyline2);
-                            //polyline1 = runDijkstra(graph, sourceNearestNode, targetNearestNode, nodesHashMap, "Pollution", "Walk", polyline1);
-
-                        }
+                        Snackbar snackbar = Snackbar
+                                .make(findViewById(id.base_cardview),
+                                        "Error! Please specify Destination point.",
+                                        Snackbar.LENGTH_LONG);
+                        snackbar.show();
                     }
 
+                    if (runFlag) {
+
+                        node sourceNearestNode = null;
+                        node targetNearestNode = null;
+
+                        if (switchFlag) {
+
+                            float targetDistance = 5000;
+
+                            if (polyline2 != null) {
+                                polyline2.remove();
+                            }
+
+                            if (routeType) { // Bike Network
+
+                                Utilities.setWeightsEdgesBeta(edgesList_b_p, nodesHashMap_b_p, "WD", 1f);
+                                for (edge edge : edgesList_b_p) {
+                                    graph_b_p.setEdgeWeight(graph_b_p.getEdge(edge.getSource(), edge.getTarget()), edge.getPollution());
+                                }
+
+                                sourceNearestNode = Utilities.findNearestNode(nodesHashMap_b_p, sourceLat, sourceLong);
+                                targetNearestNode = Utilities.findNearestNode(nodesHashMap_b_p, targetLat, targetLong);
+
+                                long t0 = System.currentTimeMillis();
+
+                                polyline1 = runBestNearestNeighbor(graph_b_p, sourceNearestNode, targetNearestNode,
+                                        nodesHashMap_b_p, "Bike", targetDistanceValue * 1000,
+                                        polyline1, edgesList_b_p);
+
+                                long t1 = System.currentTimeMillis();
+                                System.out.println("BNN Bike Running Time (ms): "+ (t1-t0));
+
+
+                            } else { // Walk Network
+
+                                Utilities.setWeightsEdgesBeta(edgesList_p, nodesHashMap_p, "WD", 1f);
+                                for (edge edge : edgesList_p) {
+                                    graph_p.setEdgeWeight(graph_p.getEdge(edge.getSource(), edge.getTarget()), edge.getPollution());
+                                }
+
+                                sourceNearestNode = Utilities.findNearestNode(nodesHashMap_p, sourceLat, sourceLong);
+                                targetNearestNode = Utilities.findNearestNode(nodesHashMap_p, targetLat, targetLong);
+                                long t0 = System.currentTimeMillis();
+                                polyline1 = runBestNearestNeighbor(graph_p, sourceNearestNode, targetNearestNode, nodesHashMap_p, "Walk", targetDistanceValue * 1000, polyline1, edgesList_p);
+                                long t1 = System.currentTimeMillis();
+                                System.out.println("BNN Bike Running Time (ms): "+ (t1-t0));
+
+                            }
+                        } else {
+
+                            //Utilities.setWeightsNodes(nodesHashMap, tilesList);
+                            //Utilities.setWeightsEdges(edgesList, nodesHashMap,"Pollution");
+
+                            //Test for regular Bike Graph
+                            //Utilities.setWeightsNodes(nodesHashMap_b, tilesList);
+                            //Utilities.setWeightsEdges(edgesList_b, nodesHashMap_b,"Pollution");
+
+                            //Test for regular Walk -p Graph
+                            //Utilities.setWeightsNodes(nodesHashMap, tilesList);
+                            //Utilities.setWeightsEdges(edgesList_p, nodesHashMap_p,"Pollution");
+
+                            //Test for regular Bike -p Graph
+                            ///Utilities.setWeightsNodes(nodesHashMap_b_p, tilesList);
+
+                            if (routeType) { //Bike
+                                // Graph
+                                Utilities.setWeightsNodes(nodesHashMap_b, tilesList);
+
+                                Log.i("Route Type", "will Run Dijkstra for Bike");
+
+                                sourceNearestNode = Utilities.findNearestNode(nodesHashMap_b, sourceLat, sourceLong);
+                                targetNearestNode = Utilities.findNearestNode(nodesHashMap_b, targetLat, targetLong);
+
+                                Log.i("Node Src", String.valueOf(sourceNearestNode.getID()));
+                                Log.i("Node Tar", String.valueOf(targetNearestNode.getID()));
+
+                                Utilities.setWeightsEdgesBeta(edgesList_b, nodesHashMap_b, "WD", 0f);
+                                for (edge edge : edgesList_b) {
+                                    graph_b.setEdgeWeight(graph_b.getEdge(edge.getSource(), edge.getTarget()), edge.getPollution());
+                                }
+                                long t0 = System.currentTimeMillis();
+
+                                polyline2 = runDijkstra(graph_b, sourceNearestNode, targetNearestNode, nodesHashMap_b, "Length", "Bike", polyline2);
+                                long t1 = System.currentTimeMillis();
+                                System.out.println("Dijkstra Bike Running Time (ms): "+ (t1-t0));
+
+                                Utilities.setWeightsEdgesBeta(edgesList_b, nodesHashMap_b, "WD", 1f);
+                                for (edge edge : edgesList_b) {
+                                    graph_b.setEdgeWeight(graph_b.getEdge(edge.getSource(), edge.getTarget()), edge.getPollution());
+                                }
+
+                                t0 = System.currentTimeMillis();
+                                polyline1 = runDijkstra(graph_b, sourceNearestNode, targetNearestNode, nodesHashMap_b, "Pollution", "Bike", polyline1);
+                                t1 = System.currentTimeMillis();
+                                System.out.println("Dijkstra Bike Running Time (ms): "+ (t1-t0));
+
+                                Utilities.setWeightsEdgesBeta(edgesList_b, nodesHashMap_b, "WD", 0.5f);
+                                for (edge edge : edgesList_b) {
+                                    graph_b.setEdgeWeight(graph_b.getEdge(edge.getSource(), edge.getTarget()), edge.getPollution());
+                                }
+
+                                if (polyline3 != null) {
+                                    polyline3.remove();
+                                }
+
+                                if (findCompromiseRoute()) {
+                                    t0 = System.currentTimeMillis();
+                                    polyline3 = runDijkstra(graph_b, sourceNearestNode, targetNearestNode, nodesHashMap_b, "Compromise", "Bike", polyline3);
+                                    t1 = System.currentTimeMillis();
+                                    System.out.println("Dijkstra Bike Running Time (ms): "+ (t1-t0));
+
+                                }
+
+
+                            } else { //Walk
+
+                                Utilities.setWeightsNodes(nodesHashMap, tilesList);
+
+                                Log.i("Route Type", "will Run Dijkstra for Walk");
+
+                                sourceNearestNode = Utilities.findNearestNode(nodesHashMap, sourceLat, sourceLong);
+                                targetNearestNode = Utilities.findNearestNode(nodesHashMap, targetLat, targetLong);
+
+
+                                Log.i("Node Src", String.valueOf(sourceNearestNode.getID()));
+                                Log.i("Node Tar", String.valueOf(targetNearestNode.getID()));
+
+                                Utilities.setWeightsEdgesBeta(edgesList, nodesHashMap, "WD", 0f);
+                                for (edge edge : edgesList) {
+                                    graph.setEdgeWeight(graph.getEdge(edge.getSource(), edge.getTarget()), edge.getPollution());
+                                }
+                                long t0 = System.currentTimeMillis();
+                                polyline2 = runDijkstra(graph, sourceNearestNode, targetNearestNode, nodesHashMap, "Length", "Walk", polyline2);
+                                long t1 = System.currentTimeMillis();
+                                System.out.println("Dijkstra Walk Running Time (ms): "+ (t1-t0));
+
+                                Utilities.setWeightsEdgesBeta(edgesList, nodesHashMap, "WD", 1f);
+                                for (edge edge : edgesList) {
+                                    graph.setEdgeWeight(graph.getEdge(edge.getSource(), edge.getTarget()), edge.getPollution());
+                                }
+
+                                t0 = System.currentTimeMillis();
+                                polyline1 = runDijkstra(graph, sourceNearestNode, targetNearestNode, nodesHashMap, "Pollution", "Walk", polyline1);
+                                t1 = System.currentTimeMillis();
+                                System.out.println("Dijkstra Walk Running Time (ms): "+ (t1-t0));
+
+                                Utilities.setWeightsEdgesBeta(edgesList, nodesHashMap, "WD", 0.5f);
+                                for (edge edge : edgesList) {
+                                    graph.setEdgeWeight(graph.getEdge(edge.getSource(), edge.getTarget()), edge.getPollution());
+                                }
+
+                                if (polyline3 != null) {
+                                    polyline3.remove();
+                                }
+
+                                if (findCompromiseRoute()) {
+                                    t0 = System.currentTimeMillis();
+                                    polyline3 = runDijkstra(graph, sourceNearestNode, targetNearestNode, nodesHashMap, "Compromise", "Walk", polyline3);
+                                    t1 = System.currentTimeMillis();
+                                    System.out.println("Dijkstra Walk Running Time (ms): "+ (t1-t0));
+
+                                }
+
+                            }
+                        }
+
+                        if (polyline1 != null) {
+
+                            LatLng startPoint = polyline1.getPoints().get(0);//.size();
+                            LatLng endPoint = polyline1.getPoints().get(polyline1.getPoints().size() - 1);
+
+                            if (startMarker != null) {
+                                startMarker.remove();
+                            }
+                            if (targetMarker != null) {
+                                targetMarker.remove();
+                            }
+
+                            float markerColor = BitmapDescriptorFactory.HUE_BLUE;
+                            startMarker = map.addMarker((new MarkerOptions()).position(startPoint)
+                                    .icon(BitmapDescriptorFactory.defaultMarker(markerColor))
+                                    .title(MainActivity.this.getString(string.startPoint)));
+
+                            targetMarker = map.addMarker((new MarkerOptions()).position(endPoint)
+                                    .title(MainActivity.this.getString(string.dropped_pin)));
+                            //map.moveCamera(CameraUpdateFactory.newLatLngZoom(infoLatLng, 14.0f));
+                        }
+                    }
+
+                    toggleFlagSubmit = false;
+                    submitButton.setText("Clear Route");
+                }
+                else{
+                    submitButton.setText("Get Route");
                     if (polyline1 != null) {
-
-                        LatLng startPoint = polyline1.getPoints().get(0);//.size();
-                        LatLng endPoint = polyline1.getPoints().get(polyline1.getPoints().size() - 1);
-
-                        if (startMarker != null) {
-                            startMarker.remove();
-                        }
-                        if (targetMarker != null) {
-                            targetMarker.remove();
-                        }
-
-                        float markerColor = BitmapDescriptorFactory.HUE_BLUE;
-                        startMarker = map.addMarker((new MarkerOptions()).position(startPoint)
-                                .icon(BitmapDescriptorFactory.defaultMarker(markerColor))
-                                .title(MainActivity.this.getString(string.startPoint)));
-
-                        targetMarker = map.addMarker((new MarkerOptions()).position(endPoint)
-                                .title(MainActivity.this.getString(string.dropped_pin)));
-                        //map.moveCamera(CameraUpdateFactory.newLatLngZoom(infoLatLng, 14.0f));
+                        polyline1.remove();
                     }
+                    if (polyline2 != null) {
+                        polyline2.remove();
+                    }
+                    if (polyline3 != null) {
+                        polyline3.remove();
+                    }
+                    //if (targetMarker != null) {
+                    //    targetMarker.remove();
+                    //}
+                    //if (startMarker != null) {
+                    //    startMarker.remove();
+                    //}
+
+                    TextView textView = binding.tradeOffText;
+                    textView.setVisibility(View.GONE);
+
+                    LinearLayout cleanestInfo = binding.cleanestInfo;
+                    cleanestInfo.setVisibility(View.GONE);
+
+                    toggleFlagSubmit = true;
                 }
             }
         }));
@@ -718,15 +807,24 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         updatePollutionButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                //imp step
-                if(SDK_INT >= Build.VERSION_CODES.R)
+                Log.i(TAG, "Get Pollution Data");
+                removePolygons("polys");
+                RelativeLayout pmLayout = binding.PMLevelsLayout;
+                pollutionState = !pollutionState;
+                pmLayout.setVisibility(View.GONE);
+
+                // If required to read csv files:
+                // change to intent.setType("*/*");
+                /*if(SDK_INT >= Build.VERSION_CODES.R)
                 {
                     if(Environment.isExternalStorageManager()){
                         //choosing csv file
                         Intent intent=new Intent();
-                        intent.setType("*/*");
+                        // if required to read csv files uncomment line below
+                        //intent.setType("...");
                         intent.putExtra(Intent.EXTRA_AUTO_LAUNCH_SINGLE_CHOICE,true);
                         intent.setAction(Intent.ACTION_GET_CONTENT);
+                        // if required to read csv files uncomment line below
                         startActivityForResult(Intent.createChooser(intent,"Select CSV File "),101);
                     }
                     else{
@@ -738,16 +836,24 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 }
                 else{
                     // for below android 11
-
                     Intent intent=new Intent();
-                    intent.setType("*/*");
+                    // if required to read csv files uncomment line below
+                    //intent.setType("...");
                     intent.putExtra(Intent.EXTRA_AUTO_LAUNCH_SINGLE_CHOICE,true);
                     intent.setAction(Intent.ACTION_GET_CONTENT);
-
                     ActivityCompat.requestPermissions(MainActivity.this,new String[] {WRITE_EXTERNAL_STORAGE},102);
+                }*/
+                getPollutionData(tilesList);
 
+                Utilities.setWeightsNodes(nodesHashMap, tilesList);
 
-                }
+                //Utilities.setWeightsNodes(nodesHashMap, tilesList);
+
+                //Utilities.setWeightsNodes(nodesHashMap_b_p, tilesList);
+
+                Button showPollutionButton = binding.btnShowPollution;
+                showPollutionButton.setText(string.show_pollution);
+
             }
         });
 
@@ -780,6 +886,14 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             //Utilities.setWeightsEdges(edgesList_b_p, nodesHashMap_b_p,"Pollution");
 
             Log.i("External File Intent", String.valueOf(tilesList.get(0).getID()));
+
+            removePolygons("polys");
+
+            Button showPollutionButton = binding.btnShowPollution;
+            showPollutionButton.setText(string.show_pollution);
+            RelativeLayout pmLayout = binding.PMLevelsLayout;
+            pollutionState = !pollutionState;
+            pmLayout.setVisibility(View.GONE);
 
         }
     }
@@ -953,12 +1067,13 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         // 51.52918125620716 -0.1248624678804757
 
         // 51.534704864236744 51.46275913576325 -0.13416123268340244 -0.24973076731659757
+        // 51.52016595219236 51.46171004780764 -0.1491119035287124 -0.24299609647128761
         Polygon polygonInit = map.addPolygon(new PolygonOptions()
                 .add(
-                        new LatLng(51.534704864236744, -0.13416123268340244 ),
-                        new LatLng(51.534704864236744, -0.24973076731659757 ),
-                        new LatLng( 51.46275913576325, -0.24973076731659757 ),
-                        new LatLng(  51.46275913576325, -0.13416123268340244)
+                        new LatLng(51.52016595219236, -0.1491119035287124 ),
+                        new LatLng(51.52016595219236, -0.24299609647128761 ),
+                        new LatLng( 51.46171004780764, -0.24299609647128761 ),
+                        new LatLng(  51.46171004780764, -0.1491119035287124)
                 ));
 
         //polygonInit.setFillColor(0x7Fe5e5e5);
@@ -1170,6 +1285,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         List<String> Path;
         double PathPollution;
         double PathLength;
+        double pathExposurePerMeter = 0;
 
         if (Route.equals("Bike")){
 
@@ -1190,7 +1306,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
             Path = dijkstraPath.getVertexList();
             long t3 = System.currentTimeMillis();
-            System.out.println("Dijkstra Bike Running Time (ms): "+ (t3-t2));
+            //System.out.println("Dijkstra Bike Running Time (ms): "+ (t3-t2));
 
 
             // ------- END JGRAPHT METHOD -------
@@ -1208,10 +1324,12 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             List<edge> edgeList = dijkstraPath.getEdgeList();
             PathLength = 0;
             PathPollution = 0;
+            pathExposurePerMeter = 0;
             for (edge edge : edgeList) {
                 //PathPollution = PathPollution + (edge.getGrade()/edge.getLength());
                 PathPollution = PathPollution + edge.getGrade();
                 PathLength =  PathLength + edge.getLength();
+                pathExposurePerMeter = pathExposurePerMeter + edge.getGrade() * edge.getLength();
             }
             // PathPollution = PathPollution/edgeList.size();
 
@@ -1276,10 +1394,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             box.setVisibility(VISIBLE);
             TextView textView = binding.cleanestInfoText;
             cleanestLength = PathLength;
-            String sourceString = "<b>Cleanest</b> " + String.valueOf(dfZero.format(PathPollution)) + " pm2.5/m3, " + String.valueOf(dfZero.format(PathLength)) +" m";
+            String sourceString = "<b>Cleanest</b> " + String.valueOf(dfZero.format(PathPollution)) + " pm2.5/m3, " + String.valueOf(dfZero.format(PathLength)) +"m";
 
             if (Route.equals("Bike")){
-                sourceString = "<b>Cleanest</b> " + String.valueOf(dfZero.format(PathPollution)) + " pm2.5/m3, " + String.valueOf(dfZero.format(PathLength)) +" m";
+                sourceString = "<b>Cleanest</b> " + String.valueOf(dfZero.format(PathPollution)) + " pm2.5/m3, " + String.valueOf(dfZero.format(PathLength)) +"m";
             }
 
             textView.setText(HtmlCompat.fromHtml(sourceString, HtmlCompat.FROM_HTML_MODE_LEGACY));
@@ -1289,12 +1407,11 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             TextView textView = binding.shortestInfoText;
             textView.setVisibility(VISIBLE);
             shortestLength = PathLength;
-            String sourceString = "<b>Shortest</b> " + String.valueOf(dfZero.format(PathPollution)) + " pm2.5/m3, " + String.valueOf(dfZero.format(PathLength)) +" m</b>";
+            String sourceString = "<b>Shortest</b> " + String.valueOf(dfZero.format(PathPollution)) + " pm2.5/m3, " + String.valueOf(dfZero.format(PathLength)) +"m";
 
             if (Route.equals("Bike")){
                 //sourceString = "<b>Shortest</b><br> " + String.valueOf(dfZero.format(PathPollution)) + " pm2.5/m </br><br> " + String.valueOf(dfZero.format(PathLength)) +" meters</b>";
-                sourceString = "<b>Shortest</b> " + String.valueOf(dfZero.format(PathPollution)) + " pm2.5/m3, " + String.valueOf(dfZero.format(PathLength)) +" m</b>";
-
+                sourceString = "<b>Shortest</b> " + String.valueOf(dfZero.format(PathPollution)) + " pm2.5/m3, " + String.valueOf(dfZero.format(PathLength)) +"m";
             }
             textView.setText(HtmlCompat.fromHtml(sourceString, HtmlCompat.FROM_HTML_MODE_LEGACY));
             //addInfoWindowShortest("Cleanest",String.valueOf(dfZero.format(cleanestPathPollution)),String.valueOf(dfZero.format(cleanestPathLength)), polyline);
@@ -1306,10 +1423,11 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             if ((PathLength < cleanestLength) & (PathLength > shortestLength)) {
                 TextView textView = binding.tradeOffText;
                 textView.setVisibility(VISIBLE);
-                String sourceString = "<b>Medium:</b> " + String.valueOf(dfZero.format(PathPollution)) + " pm2.5/m3, " + String.valueOf(dfZero.format(PathLength)) +" m</b>";
-
+                //String sourceString = "<b>Medium:</b> " + String.valueOf(dfZero.format(PathPollution)) + " pm2.5/m3, " + String.valueOf(dfZero.format(PathLength)) +" m</b>" + String.valueOf(dfZero.format(pathExposurePerMeter/PathLength));
+                String sourceString = "<b>Medium</b> " + String.valueOf(dfZero.format(PathPollution)) + " pm2.5/m3, " + String.valueOf(dfZero.format(PathLength)) +"m</b>";
                 if (Route.equals("Bike")){
-                    sourceString = "<b>Medium:</b> " + String.valueOf(dfZero.format(PathPollution)) + " pm2.5/m3, " + String.valueOf(dfZero.format(PathLength)) +" m</b>";
+                    //sourceString = "<b>Medium:</b> " + String.valueOf(dfZero.format(PathPollution)) + " pm2.5/m3, " + String.valueOf(dfZero.format(PathLength)) +" m</b>" + String.valueOf(dfZero.format(pathExposurePerMeter/PathLength));
+                    sourceString = "<b>Medium</b> " + String.valueOf(dfZero.format(PathPollution)) + " pm2.5/m3, " + String.valueOf(dfZero.format(PathLength)) + "m</b>";
 
                 }
                 textView.setText(HtmlCompat.fromHtml(sourceString, HtmlCompat.FROM_HTML_MODE_LEGACY));
@@ -1335,8 +1453,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         //List<String> nnPath = Algorithms.bestNearestNeighbor(graph,  sourceNearestNode, targetNearestNode, tarDistance, nodesHashMap);
         if (Route.equals("Walk") ){
             BNN = Algorithms.bestNearestNeighbor(graph, sourceNearestNode, targetNearestNode, tarDistance, nodesHashMap, edgesList, "undirected");
-        }else{
-            BNN = Algorithms.bestNearestNeighbor(graph, sourceNearestNode, targetNearestNode, tarDistance, nodesHashMap, edgesList, "undirected");
+        }else{ // check
+            BNN = Algorithms.bestNearestNeighbor(graph, sourceNearestNode, targetNearestNode, tarDistance, nodesHashMap, edgesList, "multi");
         }
         List<LatLng> polylines = new ArrayList<>();
         node newNode = null;
@@ -1376,70 +1494,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
     // ------------------------------------------------------------
-
-    public void createCenterForHeatmap(List<tile> tilesList) {
-
-        List<Float> valuesTiles = new ArrayList<>();
-        ProgressBar progressBar = findViewById(id.progressBar);
-
-        for  (tile tile : tilesList) {
-            valuesTiles.add(tile.getValue());
-        }
-
-        float maximum = Collections.max(valuesTiles);
-        // Find the minimum value
-        float minimum = Collections.min(valuesTiles);
-
-        Handler handler = new Handler();
-        System.out.println("Creating Polygons with Runnable!");
-        Runnable runnable = new Runnable() {
-
-            int currentChunk = 0;
-            int limitChunk = 3025;
-
-            @Override
-            public void run() {
-                if (currentChunk < limitChunk) {
-                    if (currentChunk%605 == 0){ //650 for 4900km
-                        for (int i = 0; i <= 605; i = i + 1){
-                            tile tile = tilesList.get(currentChunk + i);
-                            List<LatLng> polygonLatLng = new ArrayList<>();
-                            String polygon = tile.getGeometry();
-                            String[] parts = polygon.split("_");
-
-                            String[] latLngStr = parts[0].split(" ");
-
-                            polygonLatLng.add(new LatLng(Double.parseDouble(latLngStr[2]), Double.parseDouble(latLngStr[1])));
-
-
-                        }
-
-                    }
-
-                    progressBar.setProgress(100 * (currentChunk) / limitChunk);
-                    currentChunk = currentChunk + 605;
-                    handler.postDelayed(this, 500); // Load next chunk after 0.4 seconds
-                    System.out.println("Creating processing new Chunk!" + currentChunk);
-                } else {
-                    progressBar.setVisibility(View.GONE);
-                    handler.removeCallbacks(this);  // Important to remove callback to avoid memory leaks.
-                }
-            }
-        };
-
-        /*for  (tile tile : tilesList) {
-
-            List<LatLng> polygonLatLng = new ArrayList<>();
-            String polygon = tile.getGeometry();
-            String[] parts = polygon.split("_");
-
-            String[] latLngStr = parts[0].split(" ");
-
-            polygonLatLng.add(new LatLng(Double.parseDouble(latLngStr[2]), Double.parseDouble(latLngStr[1])));
-
-        }*/
-    }
-
 
     public void createPolygons(List<tile> tilesList) {
 
@@ -1487,13 +1541,13 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         System.out.println("Creating Polygons with Runnable!");
         Runnable runnable = new Runnable() {
             int currentChunk = 0;
-            int limitChunk = 3025;
-
+            //int limitChunk = 3025; //--> with 605
+            int limitChunk = 3600;
             @Override
             public void run() {
                 if (currentChunk < limitChunk) {
-                    if (currentChunk%605 == 0){
-                        for (int i = 0; i < 605; i = i + 1){
+                    if (currentChunk%600 == 0){
+                        for (int i = 0; i < 600; i = i + 1){
                             //System.out.println(i);
                             tile tile = tilesList.get(currentChunk + i);
                             List<LatLng> polygonLatLng = new ArrayList<>();
@@ -1525,7 +1579,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     }
 
                     progressBar.setProgress(100 * (currentChunk) / limitChunk);
-                    currentChunk = currentChunk + 605;
+                    currentChunk = currentChunk + 600;
                     handler.postDelayed(this, 750); // Load next chunk after 2 seconds
                     System.out.println("Processing More chunks: "+ currentChunk);
                 } else {
@@ -1540,38 +1594,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         handler.post(runnable);
         System.out.println("Finished Processing Chunks!");
         //--------------------------------------
-
-        /*for  (tile tile : tilesList) {
-
-            List<LatLng> polygonLatLng = new ArrayList<>();
-            String polygon = tile.getGeometry();
-            String[] parts = polygon.split("_");
-
-            for (int i = 0; i < parts.length - 1; i++){
-            //for (String part : parts){
-
-                String[] latLngStr = parts[i].split(" ");
-                //String[] latLngStr = part.split(" ");
-                polygonLatLng.add(new LatLng(Double.parseDouble(latLngStr[2]), Double.parseDouble(latLngStr[1])));
-
-            }
-
-            float value = Math.round(tile.getValue());
-            int color = assignColor(value, minimum, maximum, colorList);
-
-            int POLYGON_STROKE_WIDTH_PX = 0;
-
-            Polygon polygonX = map.addPolygon(new PolygonOptions()
-                    .addAll(polygonLatLng)
-                    .fillColor(color)
-                    .strokeWidth(POLYGON_STROKE_WIDTH_PX));
-
-            polygonList.add(polygonX);
-        }
-
-
-
-        polygonListsMap.put("polys", polygonList);*/
     }
 
     public void removePolygons(String id) {
@@ -1648,14 +1670,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
     }
 
-    public void clearCircles(){
-        if (MainActivity.this.circleInit != null) {
-            MainActivity.this.circleInit.remove();
-        }
-        if (MainActivity.this.circleEnd != null) {
-            MainActivity.this.circleEnd.remove();
-        }
-    }
 
     public boolean findCompromiseRoute(){
         float METERSDIFFERENCE = 200;
@@ -1667,9 +1681,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             return false;
         }
     }
-
-
-
 
     // TEST GET CONTENT RESOLVER
 
@@ -1708,5 +1719,62 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
 
         return tilesList;
+    }
+
+    private void getPollutionData(List<tile> tilesList) {
+        // RequestQueue initialized
+        mRequestQueue = Volley.newRequestQueue(this);
+
+        List<tile> newTilesList = new ArrayList<>();
+
+        //TextView responseText = findViewById(R.id.Response);
+
+        // String Request initialized
+        mStringRequest = new StringRequest(Request.Method.GET, url, new Response.Listener<String>() {
+
+            @Override
+            public void onResponse(String response) {
+
+                System.out.println("server responded");
+
+                //responseText.setText(response.toString());
+                String[] tilesValues = response.split(",");
+
+                for (String tileValue : tilesValues) {
+                    String[] tile = tileValue.split(":");
+                    String tileID = tile[0].substring(2, tile[0].length() - 1);
+                    //System.out.println(tileID + ", " + tile[1]);
+                    Integer tileIdInt = (int) Float.parseFloat(tileID);
+                    tileID = String.valueOf(tileIdInt);
+                    //System.out.println(" tile ID: " + tileID);
+                    //tile tileX = tilesHashMap.get(tileID);
+                    float value = Float.parseFloat(tile[1].replace("}",""));
+                    if (tileID != null){
+
+                        for  (tile tileList : tilesList) {
+                            if (tileIdInt == tileList.getID()) {
+                                System.out.println(" found tile: " + tileID + ", " + value);
+                                tileList.setValue(value);
+
+
+                                //newTilesList.add(new tile(tileList.getID(),
+                                //        value,
+                                //        tileList.getGeometry()));
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                //System.out.println(" !!!newTile: " + newTilesList);
+                Toast.makeText(getApplicationContext(), "Response :" + response.toString(), Toast.LENGTH_LONG).show();//display the response on screen
+            }
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                Log.i(TAG, "Error :" + error.toString());
+            }
+        });
+        mRequestQueue.add(mStringRequest);
     }
 }
