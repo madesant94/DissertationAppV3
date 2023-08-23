@@ -2,7 +2,7 @@ package com.example.dissertationapp;
 
 
 public class tile {
-
+    // Define tile Class for pollution Grid
     private int ID;
     private String geometry;
     private double longitude;

@@ -1,8 +1,6 @@
 package com.example.dissertationapp;
 
-import static android.Manifest.permission.WRITE_EXTERNAL_STORAGE;
 import static android.content.ContentValues.TAG;
-import static android.os.Build.VERSION.SDK_INT;
 import static android.view.View.VISIBLE;
 
 import android.Manifest;
@@ -70,12 +68,12 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptor;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
-import com.google.android.gms.maps.model.Circle;
+
 import com.google.android.gms.maps.model.Dash;
 import com.google.android.gms.maps.model.Dot;
 import com.google.android.gms.maps.model.Gap;
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.MapStyleOptions;
+
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.PatternItem;
@@ -83,7 +81,7 @@ import com.google.android.gms.maps.model.Polygon;
 import com.google.android.gms.maps.model.PolygonOptions;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
-import com.google.android.gms.maps.model.TileOverlay;
+
 import com.google.android.libraries.places.api.Places;
 import com.google.android.libraries.places.api.model.Place;
 import com.google.android.libraries.places.api.model.Place.Field;
@@ -93,7 +91,7 @@ import com.google.android.libraries.places.widget.listener.PlaceSelectionListene
 import com.google.android.libraries.places.widget.model.AutocompleteActivityMode;
 import com.google.android.material.slider.Slider;
 import com.google.android.material.snackbar.Snackbar;
-import com.google.maps.android.heatmaps.HeatmapTileProvider;
+
 import com.google.maps.android.heatmaps.WeightedLatLng;
 
 import org.jetbrains.annotations.NotNull;
@@ -127,12 +125,17 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private Marker startMarker;
     private float targetDistanceValue;
     private Boolean pollutionState = false;
-    float ZOOM = 16;
+
+    private Boolean flagUpdateWalkNodes = true;
+    private Boolean flagUpdateWalkpNodes = true;
+    private Boolean flagUpdateBikeNodes = true;
+    private Boolean flagUpdateBikepNodes = true;
+
     Map<String, List<Polygon>> polygonListsMap = new HashMap<>();
     private Boolean poly1Show = false; // Flags to show or not polylines
     private Boolean poly2Show = false;
     private Boolean switchFlag = false;
-    private Polyline polyline1; // polylines
+    private Polyline polyline1; // polylines (poyline1 cleanest, 2 shortest, 3 medium)
     private Polyline polyline2;
     private Polyline polyline3;
     private ActivityMainBinding binding;
@@ -155,10 +158,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     String latLngStr = "";
     double targetLat = 0;
     double targetLong = 0;
-
     double sourceLat = 0;
     double sourceLong = 0;
-
     double cleanestLength = 0;
     double shortestLength = 0;
     String startText = "Your Location";
@@ -167,16 +168,18 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private RequestQueue mRequestQueue; // For Volley Request
     private StringRequest mStringRequest; // For Volley Request
 
+    // for connecting with GCP
     private String url = "https://cleanestpath-gcr.nw.r.appspot.com/data"; // contact server
 
+    // initialize graphs
     SimpleWeightedGraph<String, edge> graph = new SimpleWeightedGraph<>(edge.class);
     SimpleWeightedGraph<String, edge> graph_p = new SimpleWeightedGraph<>(edge.class);
     DirectedWeightedMultigraph<String, edge> graph_b = new DirectedWeightedMultigraph<>(edge.class);
     DirectedWeightedMultigraph<String, edge> graph_b_p = new DirectedWeightedMultigraph<>(edge.class);
 
+    // request permissions
     private final int REQUEST_LATEST_LOCATION_PERMISSION = 101;
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1234;
-
     private boolean locationRequestFlag = false;
 
     @Override
@@ -191,10 +194,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         nodesHashMap = CSVLoader.loadNodes(this, "nodes-in-grid.csv");
         edgesList = CSVLoader.loadEdges(this, "square-grid-edges.csv");
         tilesList = CSVLoader.loadTiles(this, "g60_2023_07_20_08_00_00.csv");
-        tilesHashmap = CSVLoader.loadTilesHashmap(this, "g60_2023_07_20_08_00_00.csv");
 
-        //tilesList = CSVLoader.loadTiles(this, "grid-geom-manual-horizontal.csv");
-        //tilesList = CSVLoader.loadTiles(this, "grid-geom-manual-square.csv");
         // CREATE GRAPH WALKING
         for (node node : nodesHashMap.values()){
             graph.addVertex(node.getID());
@@ -206,13 +206,11 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         int edgeCount = graph.edgeSet().size();
 
-
-
         Log.i("Graph", "The graph has " + edgeCount + " edges.");
 
+        // Weights get assigned upon dijkstra call to avoid lengthy initialization
         //Utilities.setWeightsNodes(nodesHashMap, tilesList);
-        Utilities.setWeightsNodes(nodesHashMap, tilesList);
-        Utilities.setWeightsEdges(edgesList, nodesHashMap, "Pollution");
+        //Utilities.setWeightsEdges(edgesList, nodesHashMap, "Pollution");
 
         // ----------------------- WALKING PRUNED ------------------------
 
@@ -231,8 +229,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         Log.i("Graph P", "The graph has " + edgeCount + " edges.");
 
-        Utilities.setWeightsNodes(nodesHashMap_p, tilesList);
-        Utilities.setWeightsEdges(edgesList_p, nodesHashMap_p, "Pollution");
+        //Utilities.setWeightsNodes(nodesHashMap_p, tilesList);
+        //Utilities.setWeightsEdges(edgesList_p, nodesHashMap_p, "Pollution");
 
         // END GRAPHS WALKING
         // ---------------------------------------------------
@@ -254,8 +252,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         Log.i("Graph Bike", "The graph has " + edgeCount_b + " edges.");
 
-        Utilities.setWeightsNodes(nodesHashMap_b, tilesList);
-        Utilities.setWeightsEdges(edgesList_b, nodesHashMap_b,"Pollution");
+        //Utilities.setWeightsNodes(nodesHashMap_b, tilesList);
+        //Utilities.setWeightsEdges(edgesList_b, nodesHashMap_b,"Pollution");
 
         // ---------------------------------------------------
         // CREATE GRAPH BIKING PRUNED
@@ -276,12 +274,13 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         Log.i("Graph Bike", "The graph has " + edgeCount_b_p + " edges.");
 
-        Utilities.setWeightsNodes(nodesHashMap_b_p, tilesList);
-        Utilities.setWeightsEdges(edgesList_b_p, nodesHashMap_b_p,"Pollution");
+        //Utilities.setWeightsNodes(nodesHashMap_b_p, tilesList);
+        //Utilities.setWeightsEdges(edgesList_b_p, nodesHashMap_b_p,"Pollution");
 
-
-        // END GRAPH BIKE
+        // END GRAPH BIKE PRUNED
         // ---------------------------------------------------
+
+        // PREPARE DISPLAY
 
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
@@ -323,6 +322,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         autocompleteSupportFragment1.setPlaceFields(CollectionsKt.listOf(new Place.Field[]{Field.NAME, Field.ADDRESS, Field.LAT_LNG}));
         autocompleteSupportFragment1.setOnPlaceSelectedListener((PlaceSelectionListener) (new PlaceSelectionListener() {
             public void onPlaceSelected(@NotNull Place place) {
+
+                // Initialize places intent
                 Intrinsics.checkNotNullParameter(place, "place");
 
                 TextView textView = binding.autoTextView;
@@ -395,6 +396,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         exchangeButton.setOnClickListener((View.OnClickListener) (new View.OnClickListener() {
             public void onClick(View it) {
+
+                // switch start and destination
+
                 TextView textViewStart = binding.autoTextViewStart;
                 TextView textViewDest = binding.autoTextView;
 
@@ -438,6 +442,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         walkingButton.setOnClickListener((View.OnClickListener) (new View.OnClickListener() {
             public void onClick(View it) {
+                // Select walking as mode
                 routeType = false;
                 cyclingButton.setBackgroundResource(drawable.round_corner_un);
                 cyclingButton.setColorFilter(MainActivity.this.getColor(androidx.appcompat.R.color.material_blue_grey_800));
@@ -447,6 +452,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         }));
         cyclingButton.setOnClickListener((View.OnClickListener) (new View.OnClickListener() {
             public void onClick(View it) {
+                // Select biking as mode
                 routeType = true;
                 walkingButton.setBackgroundResource(drawable.round_corner_un);
                 walkingButton.setColorFilter(MainActivity.this.getColor(androidx.appcompat.R.color.material_blue_grey_800));
@@ -458,7 +464,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         circuitSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                // Code to be executed when the switch is toggled
+                // Code to be executed when the circuit switch is toggled
                 if (isChecked) {
                     switchFlag = true;
                     distanceTargetLayout.setVisibility(VISIBLE);
@@ -473,25 +479,22 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         showPollutionButton.setOnClickListener((View.OnClickListener) (new View.OnClickListener() {
             public void onClick(View it) {
+
+                // Button to Show pollution levels
                 RelativeLayout pmLayout = binding.PMLevelsLayout;
                 pollutionState = !pollutionState;
 
                 if (pollutionState){
                     createPolygons(tilesList);
-                    long t1 = System.currentTimeMillis();
-                    //createHeatmap(nodesHashMap);
+                    //long t1 = System.currentTimeMillis();
                     showPollutionButton.setText(string.hide_pollution);
-                    long t2 = System.currentTimeMillis();
-
-                    System.out.println("Creating Polygons (ms): "+ (t2-t1));
-
-
+                    //long t2 = System.currentTimeMillis();
+                    //System.out.println("Creating Polygons (ms): "+ (t2-t1));
                     pmLayout.setVisibility(VISIBLE);
 
 
                 } else{
                     removePolygons("polys");
-                    //overlay.remove();
                     showPollutionButton.setText(string.show_pollution);
                     pmLayout.setVisibility(View.GONE);
 
@@ -516,13 +519,15 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 TextView autoDistanceTarget = binding.autoDistanceTarget;
                 autoDistanceTarget.setText("Target Distance (km): " + String.valueOf(finalValue));
 
-                Log.i("Testing on value change",String.valueOf(finalValue));
+                //Log.i("Testing on value change",String.valueOf(finalValue));
             }
 
         });
 
         submitButton.setOnClickListener((View.OnClickListener) (new View.OnClickListener() {
             public void onClick(View it) {
+
+                // To run all processing for creating routes
 
                 if (toggleFlagSubmit) {
 
@@ -534,6 +539,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     boolean runFlag = true;
 
                     if (startText.equals("Your Location") || targetText.equals("To: Your Location")) {
+
+                        // If minimum conditions for search not met, then deny search
 
                         if (locationRequestFlag) {
                             sourceLat = sourceLocation.getLatitude();
@@ -585,18 +592,35 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
                     if (runFlag) {
 
+                        // else proceed
+
                         node sourceNearestNode = null;
                         node targetNearestNode = null;
 
                         if (switchFlag) {
 
-                            float targetDistance = 5000;
+                            // Run circuit Logic
 
+                            float targetDistance = 5000; // there must a dt value associated but just in case
+
+                            // delete other polylines if they exist
                             if (polyline2 != null) {
                                 polyline2.remove();
                             }
 
-                            if (routeType) { // Bike Network
+                            if (polyline3 != null) {
+                                polyline3.remove();
+                            }
+
+                            // ----- RUN BNN ----------
+
+                            if (routeType) { // Biking Network
+
+                                if (flagUpdateBikepNodes){
+                                    // pollution grid got updated
+                                    Utilities.setWeightsNodes(nodesHashMap_b_p, tilesList);
+                                    flagUpdateBikepNodes = false;
+                                }
 
                                 Utilities.setWeightsEdgesBeta(edgesList_b_p, nodesHashMap_b_p, "WD", 1f);
                                 for (edge edge : edgesList_b_p) {
@@ -616,7 +640,13 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                                 System.out.println("BNN Bike Running Time (ms): "+ (t1-t0));
 
 
-                            } else { // Walk Network
+                            } else { // Walking Network
+
+                                if (flagUpdateWalkpNodes){
+                                    // pollution grid got updated
+                                    Utilities.setWeightsNodes(nodesHashMap_p, tilesList);
+                                    flagUpdateWalkpNodes = false;
+                                }
 
                                 Utilities.setWeightsEdgesBeta(edgesList_p, nodesHashMap_p, "WD", 1f);
                                 for (edge edge : edgesList_p) {
@@ -633,22 +663,17 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                             }
                         } else {
 
-                            //Utilities.setWeightsNodes(nodesHashMap, tilesList);
-                            //Utilities.setWeightsEdges(edgesList, nodesHashMap,"Pollution");
-
-                            //Test for regular Bike Graph
-                            //Utilities.setWeightsNodes(nodesHashMap_b, tilesList);
-                            //Utilities.setWeightsEdges(edgesList_b, nodesHashMap_b,"Pollution");
-
-                            //Test for regular Walk -p Graph
-                            //Utilities.setWeightsNodes(nodesHashMap, tilesList);
-                            //Utilities.setWeightsEdges(edgesList_p, nodesHashMap_p,"Pollution");
-
-                            //Test for regular Bike -p Graph
-                            ///Utilities.setWeightsNodes(nodesHashMap_b_p, tilesList);
+                            // --------------- RUN DIJKSTRA -------------------
 
                             if (routeType) { //Bike
                                 // Graph
+
+                                if (flagUpdateBikeNodes){
+                                    // pollution grid got updated
+                                    Utilities.setWeightsNodes(nodesHashMap_b, tilesList);
+                                    flagUpdateBikeNodes = false;
+                                }
+
                                 Utilities.setWeightsNodes(nodesHashMap_b, tilesList);
 
                                 Log.i("Route Type", "will Run Dijkstra for Bike");
@@ -699,7 +724,11 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
                             } else { //Walk
 
-                                Utilities.setWeightsNodes(nodesHashMap, tilesList);
+                                if (flagUpdateWalkNodes){
+                                    // pollution grid got updated
+                                    Utilities.setWeightsNodes(nodesHashMap, tilesList);
+                                    flagUpdateWalkNodes = false;
+                                }
 
                                 Log.i("Route Type", "will Run Dijkstra for Walk");
 
@@ -751,6 +780,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
                         if (polyline1 != null) {
 
+                            // Add markers
+
                             LatLng startPoint = polyline1.getPoints().get(0);//.size();
                             LatLng endPoint = polyline1.getPoints().get(polyline1.getPoints().size() - 1);
 
@@ -776,7 +807,12 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     submitButton.setText("Clear Route");
                 }
                 else{
+
+                    // Reset
+
                     submitButton.setText("Get Route");
+
+                    // Clear polylines
                     if (polyline1 != null) {
                         polyline1.remove();
                     }
@@ -786,6 +822,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     if (polyline3 != null) {
                         polyline3.remove();
                     }
+
+                    // I decided to keep the start and targetMarkers when resetting the route
                     //if (targetMarker != null) {
                     //    targetMarker.remove();
                     //}
@@ -793,6 +831,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     //    startMarker.remove();
                     //}
 
+                    // Clear views
                     TextView textView = binding.tradeOffText;
                     textView.setVisibility(View.GONE);
 
@@ -812,8 +851,12 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 RelativeLayout pmLayout = binding.PMLevelsLayout;
                 pollutionState = !pollutionState;
                 pmLayout.setVisibility(View.GONE);
+                flagUpdateWalkNodes = true;
+                flagUpdateBikeNodes = true;
+                flagUpdateWalkpNodes = true;
+                flagUpdateBikepNodes = true;
 
-                // If required to read csv files:
+                // THIS PART OF THE CODE IS IN CASE YOU WANT TO READ CSV FILES INSTEAD
                 // change to intent.setType("*/*");
                 /*if(SDK_INT >= Build.VERSION_CODES.R)
                 {
@@ -843,13 +886,12 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     intent.setAction(Intent.ACTION_GET_CONTENT);
                     ActivityCompat.requestPermissions(MainActivity.this,new String[] {WRITE_EXTERNAL_STORAGE},102);
                 }*/
+
+                // CURRENT CODE IS FOR SERVER CONNECTION
+
                 getPollutionData(tilesList);
 
                 Utilities.setWeightsNodes(nodesHashMap, tilesList);
-
-                //Utilities.setWeightsNodes(nodesHashMap, tilesList);
-
-                //Utilities.setWeightsNodes(nodesHashMap_b_p, tilesList);
 
                 Button showPollutionButton = binding.btnShowPollution;
                 showPollutionButton.setText(string.show_pollution);
@@ -859,7 +901,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     }
 
-    Uri fileURI; // Define URI for reading external files *PLACEHOLDER*
+    Uri fileURI; // Define URI for reading external files
+    // this function is not used in the end, since the final version of the app retrieves new data from the server
+    // but was used for testing
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
@@ -906,7 +950,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         //return(super.onCreateOptionsMenu(menu));
     }
 
-    // Test for autocomplete textview
+    // Autocomplete Logic for mini Start Places -> show markers, info
     private final ActivityResultLauncher<Intent> startAutocomplete = registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(),
             result -> {
@@ -917,7 +961,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                         Log.i(TAG, "Place: ${place.getName()}, ${place.getId()}");
 
                         TextView textView = binding.autoTextViewStart;
+
+                        // obtain name of place selected
                         String namePlace = place.getName();
+                        // obtain LatLng coordinates of place selected
                         LatLng latLng = place.getLatLng();
 
                         textView.setText("From: " + namePlace);
@@ -931,10 +978,12 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                             startMarker.remove();
                         }
 
+                        // add markers
                         MainActivity.this.startMarker = map.addMarker((new MarkerOptions())
                                 .position(latLng)
                                 .title("Start"));
-                        map.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 18.0F));
+                        // locate camera to place
+                        map.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 16.0F));
                     }
                 } else if (result.getResultCode() == Activity.RESULT_CANCELED) {
                     // The user canceled the operation.
@@ -942,6 +991,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 }
             });
 
+    // Autocomplete Logic for mini Target Places -> show markers, info
     private final ActivityResultLauncher<Intent> targetAutocomplete = registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(),
             result -> {
@@ -969,7 +1019,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                         MainActivity.this.targetMarker = map.addMarker((new MarkerOptions())
                                 .position(latLng)
                                 .title("Destination"));
-                        map.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 18.0F));
+                        map.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 16.0F));
                     }
                 } else if (result.getResultCode() == Activity.RESULT_CANCELED) {
                     // The user canceled the operation.
@@ -977,6 +1027,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 }
             });
 
+    // To change map view as satellite, terrain, others, not used but an interesting visualization option
     public boolean onOptionsItemSelected(@NotNull MenuItem item) {
         Intrinsics.checkNotNullParameter(item, "item");
         int var2 = item.getItemId();
@@ -1033,6 +1084,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     public void onMapReady(GoogleMap googleMap) {
         map = googleMap;
 
+        // Logic if you want to add customized map
         /*try {
             // Customise the styling of the base map using a JSON object defined
             // in a raw resource file.
@@ -1054,20 +1106,11 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         LatLng london = new LatLng(51.496715, -0.1763672);
         //float zoomLevel = 15.0F;
         float zoomLevel = 17.0F;
-        //(-0.1465312673602718 51.51569143211838,
-        // -0.2043147326397282 51.51569143211838,
-        // -0.2043147326397282 51.479718567881626,
-        // -0.1465312673602718 51.479718567881626,
-        // -0.1465312673602718 51.51569143211838)
 
-        // 51.52918125620716, -0.1248624678804757
-        // 51.52918125620716, -0.2259835321195243
-        // 51.46622874379285, -0.2259835321195243
-        // 51.46622874379285, -0.1248624678804757
-        // 51.52918125620716 -0.1248624678804757
-
-        // 51.534704864236744 51.46275913576325 -0.13416123268340244 -0.24973076731659757
+        // Coordinates main polygon
         // 51.52016595219236 51.46171004780764 -0.1491119035287124 -0.24299609647128761
+
+        // Add main polygon for target/permissible area
         Polygon polygonInit = map.addPolygon(new PolygonOptions()
                 .add(
                         new LatLng(51.52016595219236, -0.1491119035287124 ),
@@ -1076,12 +1119,11 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                         new LatLng(  51.46171004780764, -0.1491119035287124)
                 ));
 
-        //polygonInit.setFillColor(0x7Fe5e5e5);
         polygonInit.setStrokeColor(ContextCompat.getColor(getApplicationContext(),color.muted_blue));
 
         map.moveCamera(CameraUpdateFactory.newLatLngZoom(london, zoomLevel));
         setMapLongClick(map);
-        //setOnPolylineClickListener(map);
+
         map.setBuildingsEnabled(true);
         enableMyLocation();
     }
@@ -1096,6 +1138,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 LOCATION_PERMISSION_REQUEST_CODE);
     }
 
+    // handle permission request
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
@@ -1121,6 +1164,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
     private Location retrieveLocation() {
+        // retrieve location if permission worked
         LocationManager locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
         Location location = null;
         if (locationManager != null) {
@@ -1140,59 +1184,37 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         return location;
     }
     // ----------------------
-    private void setMapOnZoom(final GoogleMap map, HeatmapTileProvider provider) {
-        map.setOnCameraIdleListener((GoogleMap.OnCameraIdleListener)(new GoogleMap.OnCameraIdleListener(){
-            public void onCameraIdle() {
-                float newZoom = map.getCameraPosition().zoom;
 
-                if ((newZoom >= 15) & (newZoom != ZOOM)) {
-
-                    int radius = 30;
-
-                    if (newZoom > 15) {
-                        radius = 40;
-                    }
-                    if (newZoom >= 17) {
-
-                        radius = 120;
-                    }
-
-                    ZOOM = newZoom;
-
-                    Log.i("Zoom", String.valueOf(newZoom));
-
-                    provider.setRadius(radius);
-                    //overlay.clearTileCache();
-                }
-            }
-        }));
-    }
-
+    // Add Markers with Long Click
     private void setMapLongClick(final GoogleMap map) {
         map.setOnMapLongClickListener((GoogleMap.OnMapLongClickListener)(new GoogleMap.OnMapLongClickListener() {
             public void onMapLongClick(@NotNull LatLng latLng) {
+
                 TextView textViewTarget = binding.autoTextView;
 
                 DecimalFormat dfZero = new DecimalFormat("0.0000");
+
                 double Lat = latLng.latitude;
                 double Long = latLng.longitude;
+
                 AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
                 builder.setTitle("Set Location as...")
                         .setItems(new CharSequence[]{"Starting Point", "Destination"}, new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog, int which) {
+                                // Intent to ask whether new marker is for start or finish.
                                 // The 'which' argument contains the index position of the selected item
                                 float markerColor;
                                 boolean newLocation = false;
                                 switch(which){
-                                    case 0: //Red was chosen
+                                    case 0: // Target was chosen
                                         newLocation = true;
                                         markerColor = BitmapDescriptorFactory.HUE_BLUE;
                                         break;
-                                    case 1: //Blue was chosen
+                                    case 1: // Start was chosen
                                         newLocation = false;
                                         markerColor = BitmapDescriptorFactory.HUE_RED;
                                         break;
-                                    default: //Default to red if something goes wrong
+                                    default: // Default to Target if something goes wrong
                                         markerColor = BitmapDescriptorFactory.HUE_RED;
                                         break;
                                 }
@@ -1234,41 +1256,13 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                                 }
                             }
                         });
+
                 builder.show();
-
-
 
             }
         }));
     }
 
-    private void setOnPolylineClickListener(final GoogleMap map) {
-
-        map.setOnPolylineClickListener(new GoogleMap.OnPolylineClickListener() {
-            @Override
-            public void onPolylineClick(Polyline clickedPolyline) {
-                if (clickedPolyline.equals(polyline1)) {  // Check if the clicked polyline is the one we're interested in
-                    // Do something here
-                    if (poly1Show){
-                        markerCleanest.setVisible(true);
-                        //markerCleanest.isNotVisible();
-                    }else{
-                        markerCleanest.setVisible(false);
-                    }
-                    poly1Show =! poly1Show;
-                }
-                if (clickedPolyline.equals(polyline2)) {
-                    if (poly2Show){
-                        markerShortest.setVisible(true);
-                        //markerCleanest.isNotVisible();
-                    }else{
-                        markerShortest.setVisible(false);
-                    }
-                    poly2Show =! poly2Show;
-                }
-            }
-        });
-    }
 
     public Polyline runDijkstra(Graph<String, edge> graph, node sourceNearestNode, node targetNearestNode,
 
@@ -1285,29 +1279,31 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         List<String> Path;
         double PathPollution;
         double PathLength;
-        double pathExposurePerMeter = 0;
+        //double pathExposurePerMeter = 0;
 
         if (Route.equals("Bike")){
 
             // ------- INIT Complete JGRAPHT METHOD -------
-            long t2 = System.currentTimeMillis();
+
+            // Initialize Dijkstra Object and Path
             DijkstraShortestPath<String, edge> dijkstraShortestPath = new DijkstraShortestPath<>(graph);
             GraphPath<String, edge> dijkstraPath = dijkstraShortestPath.getPath(sourceNearestNode.getID(), targetNearestNode.getID());
-            // POLLUTION == WEIGHT (WHICH CAN BE DISTANCE)
-            // GRADE == POLLUTION
+
             List<edge> edgeList = dijkstraPath.getEdgeList();
             PathLength = 0;
             PathPollution = 0;
+
+            // obtain pollution and length values
+            // We use .getGrade here to obtain the raw pollution values and not the weighted or normalized version
             for (edge edge : edgeList) {
-                //PathPollution = PathPollution + (edge.getGrade()/edge.getLength());
+
                 PathPollution = PathPollution + edge.getGrade();
                 PathLength =  PathLength + edge.getLength();
+
             }
 
+            // Obtain nodes as Path
             Path = dijkstraPath.getVertexList();
-            long t3 = System.currentTimeMillis();
-            //System.out.println("Dijkstra Bike Running Time (ms): "+ (t3-t2));
-
 
             // ------- END JGRAPHT METHOD -------
 
@@ -1319,38 +1315,40 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             long t2 = System.currentTimeMillis();
             DijkstraShortestPath<String, edge> dijkstraShortestPath = new DijkstraShortestPath<>(graph);
             GraphPath<String, edge> dijkstraPath = dijkstraShortestPath.getPath(sourceNearestNode.getID(), targetNearestNode.getID());
-            // POLLUTION == WEIGHT (WHICH CAN BE DISTANCE)
-            // GRADE == POLLUTION
+
             List<edge> edgeList = dijkstraPath.getEdgeList();
             PathLength = 0;
             PathPollution = 0;
-            pathExposurePerMeter = 0;
+            //pathExposurePerMeter = 0;
             for (edge edge : edgeList) {
-                //PathPollution = PathPollution + (edge.getGrade()/edge.getLength());
+
                 PathPollution = PathPollution + edge.getGrade();
                 PathLength =  PathLength + edge.getLength();
-                pathExposurePerMeter = pathExposurePerMeter + edge.getGrade() * edge.getLength();
+                //pathExposurePerMeter = pathExposurePerMeter + edge.getGrade() * edge.getLength();
             }
-            // PathPollution = PathPollution/edgeList.size();
 
+            // Obtain nodes as Path
             Path = dijkstraPath.getVertexList();
-            long t3 = System.currentTimeMillis();
-            //System.out.println("DijkstraV Inner Method Bike.getPath           " + Path);
-            System.out.println("Dijkstra WALK Running Time (ms): "+ (t3-t2));
+            //long t3 = System.currentTimeMillis();
+            //System.out.println("Dijkstra WALK Running Time (ms): "+ (t3-t2));
 
             // ------- END JGRAPHT METHOD -------
 
         }
 
         node newNode = null;
+
+        // Obtain a Series of polylines to visualize complete route
         List<LatLng> polylines = new ArrayList<>();
 
         for (String node: Path){
-            //newNode = findNode(nodesList, node);
+
             newNode = nodesHashMap.get(node);
             polylines.add(new LatLng(newNode.getLongitude(), newNode.getLatitude()));
+
         }
 
+        // Color code the polylines
         List<PatternItem> pattern = Arrays.asList(new Dot(), new Gap(10));
         int polyColor = ContextCompat.getColor(getApplicationContext(),color.muted_blue);
 
@@ -1369,12 +1367,13 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         if (Type.equals("Compromise")) {
 
+            // To compute Compromise it has to be different than the other two routes, too much on display if not
             if ((PathLength < cleanestLength) & (PathLength > shortestLength)) {
                 polyline = map.addPolyline(new PolylineOptions().addAll(polylines)
                         .pattern(pattern)
                         .color(polyColor)
                         .geodesic(true)
-                        .clickable(true)
+                        //.clickable(true)
                         .width(15));
             }
         }
@@ -1384,12 +1383,13 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     .pattern(pattern)
                     .color(polyColor)
                     .geodesic(true)
-                    .clickable(true)
+                    //.clickable(true)
                     .width(15));
         }
 
         if (Type.equals("Pollution")){
 
+            // Show Metrics on display
             LinearLayout box = binding.cleanestInfo;
             box.setVisibility(VISIBLE);
             TextView textView = binding.cleanestInfoText;
@@ -1414,12 +1414,11 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 sourceString = "<b>Shortest</b> " + String.valueOf(dfZero.format(PathPollution)) + " pm2.5/m3, " + String.valueOf(dfZero.format(PathLength)) +"m";
             }
             textView.setText(HtmlCompat.fromHtml(sourceString, HtmlCompat.FROM_HTML_MODE_LEGACY));
-            //addInfoWindowShortest("Cleanest",String.valueOf(dfZero.format(cleanestPathPollution)),String.valueOf(dfZero.format(cleanestPathLength)), polyline);
-            //markerShortest = addInfoWindow("Shortest",String.valueOf(dfZero.format(PathLength)),String.valueOf(dfZero.format(PathPollution)), polyline, markerShortest, true);
         }
 
         if (Type.equals("Compromise")){
 
+            // To compute Compromise it has to be different than the other two routes, too much on display if not
             if ((PathLength < cleanestLength) & (PathLength > shortestLength)) {
                 TextView textView = binding.tradeOffText;
                 textView.setVisibility(VISIBLE);
@@ -1433,7 +1432,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 textView.setText(HtmlCompat.fromHtml(sourceString, HtmlCompat.FROM_HTML_MODE_LEGACY));
 
             }
-
 
         }
 
@@ -1449,20 +1447,30 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         if (polyline != null) {
             polyline.remove();
         }
+
+        // We define a BNN object, to handle the path pollution, and length levels.
         bnn BNN = null;
-        //List<String> nnPath = Algorithms.bestNearestNeighbor(graph,  sourceNearestNode, targetNearestNode, tarDistance, nodesHashMap);
+
+        // Differentiate between undirected and multidirected graph
         if (Route.equals("Walk") ){
+
             BNN = Algorithms.bestNearestNeighbor(graph, sourceNearestNode, targetNearestNode, tarDistance, nodesHashMap, edgesList, "undirected");
-        }else{ // check
-            BNN = Algorithms.bestNearestNeighbor(graph, sourceNearestNode, targetNearestNode, tarDistance, nodesHashMap, edgesList, "multi");
         }
+        else{
+
+            BNN = Algorithms.bestNearestNeighbor(graph, sourceNearestNode, targetNearestNode, tarDistance, nodesHashMap, edgesList, "multi");
+
+        }
+
         List<LatLng> polylines = new ArrayList<>();
         node newNode = null;
+        // get polylines to create complete route for display
         for (String node: BNN.getRoute()){
-            //newNode = findNode(nodesList, node);
             newNode = nodesHashMap.get(node);
             polylines.add(new LatLng(newNode.getLongitude(), newNode.getLatitude()));
         }
+
+        // Color code and style for biking and walking
 
         List<PatternItem> pattern = Arrays.asList(new Dot(), new Gap(10));
         int polyColor = ContextCompat.getColor(getApplicationContext(),color.muted_blue);
@@ -1478,10 +1486,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 .clickable(true)
                 .width(15));
 
-        //LinearLayout boxLength = binding.shortestInfo;
-        //boxLength.setVisibility(View.GONE);
-
         DecimalFormat dfZero = new DecimalFormat("0.00");
+
+        // Display metrics on screen
 
         LinearLayout box = binding.cleanestInfo;
         box.setVisibility(VISIBLE);
@@ -1490,25 +1497,22 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         textView.setText(HtmlCompat.fromHtml(sourceString, HtmlCompat.FROM_HTML_MODE_LEGACY));
         TextView textViewShortest = binding.shortestInfoText;
         textViewShortest.setVisibility(View.GONE);
+
         return polyline;
     }
 
     // ------------------------------------------------------------
 
     public void createPolygons(List<tile> tilesList) {
+        // Create polygons for display
 
         List<Float> valuesTiles = new ArrayList<>();
 
         for  (tile tile : tilesList) {
             valuesTiles.add(tile.getValue());
         }
-
-        //float maximum = Collections.max(valuesTiles);
-        // Find the minimum value
-        //float minimum = Collections.min(valuesTiles);
-
+        // Values for color assignment
         float maximum = 10;
-        // Find the minimum value
         float minimum = 0;
 
         List<Integer> colorList = new ArrayList<>();
@@ -1536,13 +1540,12 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         TextView textView = findViewById(id.progress_text);
         textView.setVisibility(VISIBLE);
 
-        Handler handler = new Handler();
+        Handler handler = new Handler(); // Create handler object to load polygons by chunks
 
         System.out.println("Creating Polygons with Runnable!");
         Runnable runnable = new Runnable() {
             int currentChunk = 0;
-            //int limitChunk = 3025; //--> with 605
-            int limitChunk = 3600;
+            int limitChunk = 3600; // number of tiles
             @Override
             public void run() {
                 if (currentChunk < limitChunk) {
@@ -1555,10 +1558,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                             String[] parts = polygon.split("_");
 
                             for (int j = 0; j < parts.length - 1; j++){
-                                //for (String part : parts){
 
                                 String[] latLngStr = parts[j].split(" ");
-                                //String[] latLngStr = part.split(" ");
                                 polygonLatLng.add(new LatLng(Double.parseDouble(latLngStr[2]), Double.parseDouble(latLngStr[1])));
 
                             }
@@ -1597,6 +1598,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
     public void removePolygons(String id) {
+        // remove Polygons from map
         List<Polygon> polygonList = polygonListsMap.get(id);
         if (polygonList != null) {
             for (Polygon polygon : polygonList) {
@@ -1725,10 +1727,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         // RequestQueue initialized
         mRequestQueue = Volley.newRequestQueue(this);
 
-        List<tile> newTilesList = new ArrayList<>();
-
-        //TextView responseText = findViewById(R.id.Response);
-
         // String Request initialized
         mStringRequest = new StringRequest(Request.Method.GET, url, new Response.Listener<String>() {
 
@@ -1737,7 +1735,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
                 System.out.println("server responded");
 
-                //responseText.setText(response.toString());
                 String[] tilesValues = response.split(",");
 
                 for (String tileValue : tilesValues) {
@@ -1755,19 +1752,14 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                             if (tileIdInt == tileList.getID()) {
                                 System.out.println(" found tile: " + tileID + ", " + value);
                                 tileList.setValue(value);
-
-
-                                //newTilesList.add(new tile(tileList.getID(),
-                                //        value,
-                                //        tileList.getGeometry()));
                                 break;
                             }
                         }
                     }
                 }
-
-                //System.out.println(" !!!newTile: " + newTilesList);
-                Toast.makeText(getApplicationContext(), "Response :" + response.toString(), Toast.LENGTH_LONG).show();//display the response on screen
+                // Add response toast
+                Toast.makeText(getApplicationContext(), "Updated Pollution", Toast.LENGTH_LONG).show();
+                //Toast.makeText(getApplicationContext(), "Response :" + response.toString(), Toast.LENGTH_LONG).show();//display the response on screen
             }
         }, new Response.ErrorListener() {
             @Override

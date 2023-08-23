@@ -1,6 +1,8 @@
 package com.example.dissertationapp;
 
 public class node {
+
+    // Define node Class for Graphs
     private String ID;
     private float longitude;
     private float latitude;

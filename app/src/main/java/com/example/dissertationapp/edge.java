@@ -3,6 +3,7 @@ package com.example.dissertationapp;
 import org.jgrapht.graph.DefaultWeightedEdge;
 
 public class edge {
+    // Define Edge Class for Graphs
     private String source;
     private String target;
     private float length;
@@ -37,7 +38,7 @@ public class edge {
         return target;
     }
 
-    public void setDestination(String destination) {
+    public void setTarget(String destination) {
         this.target = destination;
     }
 

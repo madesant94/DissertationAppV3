@@ -1,8 +1,6 @@
 package com.example.dissertationapp;
 import android.content.Context;
 import android.content.res.AssetManager;
-import android.net.Uri;
-import android.widget.Toast;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -14,7 +12,10 @@ import java.util.List;
 
 public class CSVLoader {
 
+    // READ CSV FILES UPON INITIALIZATION
+
     public static List<edge> loadEdges(Context context, String fileName) {
+        // Load Edges.csv files
         List<edge> edgeList = new ArrayList<>();
         AssetManager assetManager = context.getAssets();
         try {
@@ -27,27 +28,24 @@ public class CSVLoader {
                 // Process each line of the CSV file
                 if (n != 0) {
                     String[] values = line.split(",");
-                    //System.out.println("ID: " + values[0] + " , value:" + values[1]);
-                    //tiles.add(new tile(Integer.parseInt(values[0]), Float.valueOf(values[1])));
-                    //edge(String source, String target, float length, float pollution)
                     edgeList.add(new edge(values[0],
                             values[1],
                             Float.valueOf(values[2]),
                             0.0F));
-
-                    //graph.addVertex(values[0]);
-
                 }
                 n = n+1;
             }
 
             bufferedReader.close();
+
         } catch (IOException e) {
+
             e.printStackTrace();
         }
         return edgeList;
     }
     public static List<edge> loadEdgesBike(Context context, String fileName, boolean simple) {
+        //load Edges Bike
         List<edge> edgeList = new ArrayList<>();
         AssetManager assetManager = context.getAssets();
         try {
@@ -61,9 +59,7 @@ public class CSVLoader {
                 // Process each line of the CSV file
                 if (n != 0) {
                     String[] values = line.split(",");
-                    //System.out.println("ID: " + values[0] + " , value:" + values[1]);
-                    //tiles.add(new tile(Integer.parseInt(values[0]), Float.valueOf(values[1])));
-                    //edge(String source, String target, float length, float pollution)
+
                     Edge = new edge(values[0], values[1], Float.valueOf(values[2]), 0.0F);
                     //Edge.setGrade(Integer.valueOf(values[3])); #deleted grade for the moment
 
@@ -72,7 +68,7 @@ public class CSVLoader {
                     }
                     else{
                         Edge.setTurnDegree(values[3]);
-                    }; //or 4 depending if grade exists
+                    } //or 4 depending if grade exists
 
                     edgeList.add(Edge);
 
@@ -88,7 +84,7 @@ public class CSVLoader {
         return edgeList;
     }
     public static HashMap<String, node> loadNodes(Context context, String fileName) {
-        List<node> nodesCList = new ArrayList<>();
+
         HashMap<String, node> nodesHashMap = new HashMap<String, node>();
         AssetManager assetManager = context.getAssets();
         try {
@@ -101,12 +97,7 @@ public class CSVLoader {
                 // Process each line of the CSV file
                 if (n != 0) {
                     String[] values = line.split(",");
-                    nodesCList.add(new node(values[0],
-                            Float.valueOf(values[2]),
-                            Float.valueOf(values[1]),
-                            Integer.parseInt(values[3])));
-                    //node(String ID, float longitude, float latitude, int grid )
-                    //System.out.println("ID: " + values[0] + " , value:" + values[1]);
+
                     nodesHashMap.put(values[0], new node(values[0],
                             Float.valueOf(values[2]),
                             Float.valueOf(values[1]),

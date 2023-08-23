@@ -4,6 +4,8 @@ import java.util.List;
 
 public class bnn {
 
+    // Define BNN Class for Algorithm BNN
+
     private List<String> route;
     private double pollution;
     private double length;
